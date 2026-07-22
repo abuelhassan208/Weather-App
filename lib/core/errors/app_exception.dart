@@ -33,6 +33,18 @@ final class ServerException extends AppException {
   const ServerException([super.message = 'Server error occurred.']);
 }
 
+final class ConfigurationException extends AppException {
+  const ConfigurationException([
+    super.message = 'The application is not configured correctly.',
+  ]);
+}
+
+final class CacheException extends AppException {
+  const CacheException([
+    super.message = 'An error occurred while accessing cached data.',
+  ]);
+}
+
 final class UnknownException extends AppException {
   const UnknownException([super.message = 'Something went wrong.']);
 }
