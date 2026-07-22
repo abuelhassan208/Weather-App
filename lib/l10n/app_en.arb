@@ -1,5 +1,60 @@
 {
   "@@locale": "en",
+
   "appTitle": "Weather App",
-  "foundationReady": "Weather app foundation is ready"
+  "foundationReady": "Weather app foundation is ready",
+
+  "weatherInitialMessage": "Search for a city to view its current weather.",
+  "cityInputLabel": "City",
+  "cityInputHint": "Enter a city name",
+  "searchButton": "Search",
+  "loadingWeather": "Fetching weather data...",
+
+  "cachedWeatherNotice": "Showing the last saved weather data.",
+  "tryAgainButton": "Try again",
+
+  "temperatureLabel": "Temperature",
+  "feelsLikeLabel": "Feels like",
+  "humidityLabel": "Humidity",
+  "windSpeedLabel": "Wind speed",
+  "lastUpdatedLabel": "Last updated",
+
+  "temperatureValue": "{value}°C",
+  "@temperatureValue": {
+    "description": "Displays a temperature value in Celsius.",
+    "placeholders": {
+      "value": {
+        "type": "num"
+      }
+    }
+  },
+
+  "humidityValue": "{value}%",
+  "@humidityValue": {
+    "description": "Displays the humidity percentage.",
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+
+  "windSpeedValue": "{value} km/h",
+  "@windSpeedValue": {
+    "description": "Displays wind speed in kilometers per hour.",
+    "placeholders": {
+      "value": {
+        "type": "num"
+      }
+    }
+  },
+
+  "invalidCityError": "City not found. Please check the city name.",
+  "noInternetError": "No internet connection. Please check your connection and try again.",
+  "timeoutError": "The request took too long. Please try again.",
+  "unauthorizedError": "Unable to access the weather service.",
+  "serverError": "The weather service is currently unavailable. Please try again later.",
+  "cacheError": "The saved weather data could not be loaded.",
+  "configurationError": "The application is not configured correctly.",
+  "unknownError": "Something went wrong. Please try again."
 }

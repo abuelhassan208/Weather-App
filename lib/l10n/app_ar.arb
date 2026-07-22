@@ -1,5 +1,60 @@
 {
   "@@locale": "ar",
+
   "appTitle": "تطبيق الطقس",
-  "foundationReady": "تم تجهيز الأساس المبدئي لتطبيق الطقس"
+  "foundationReady": "تم تجهيز الأساس المبدئي لتطبيق الطقس",
+
+  "weatherInitialMessage": "ابحث عن مدينة لعرض حالة الطقس الحالية.",
+  "cityInputLabel": "المدينة",
+  "cityInputHint": "أدخل اسم المدينة",
+  "searchButton": "بحث",
+  "loadingWeather": "جارٍ تحميل بيانات الطقس...",
+
+  "cachedWeatherNotice": "يتم عرض آخر بيانات طقس محفوظة.",
+  "tryAgainButton": "إعادة المحاولة",
+
+  "temperatureLabel": "درجة الحرارة",
+  "feelsLikeLabel": "المحسوسة",
+  "humidityLabel": "الرطوبة",
+  "windSpeedLabel": "سرعة الرياح",
+  "lastUpdatedLabel": "آخر تحديث",
+
+  "temperatureValue": "{value}°م",
+  "@temperatureValue": {
+    "description": "يعرض قيمة درجة الحرارة بالدرجة المئوية.",
+    "placeholders": {
+      "value": {
+        "type": "num"
+      }
+    }
+  },
+
+  "humidityValue": "{value}٪",
+  "@humidityValue": {
+    "description": "يعرض نسبة الرطوبة.",
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+
+  "windSpeedValue": "{value} كم/س",
+  "@windSpeedValue": {
+    "description": "يعرض سرعة الرياح بالكيلومتر في الساعة.",
+    "placeholders": {
+      "value": {
+        "type": "num"
+      }
+    }
+  },
+
+  "invalidCityError": "لم يتم العثور على المدينة. تحقق من اسم المدينة.",
+  "noInternetError": "لا يوجد اتصال بالإنترنت. تحقق من الاتصال ثم حاول مرة أخرى.",
+  "timeoutError": "استغرق الطلب وقتًا طويلًا. حاول مرة أخرى.",
+  "unauthorizedError": "تعذر الوصول إلى خدمة الطقس.",
+  "serverError": "خدمة الطقس غير متاحة حاليًا. حاول مرة أخرى لاحقًا.",
+  "cacheError": "تعذر تحميل بيانات الطقس المحفوظة.",
+  "configurationError": "لم يتم إعداد التطبيق بصورة صحيحة.",
+  "unknownError": "حدث خطأ غير متوقع. حاول مرة أخرى."
 }

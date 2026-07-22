@@ -109,6 +109,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Weather app foundation is ready'**
   String get foundationReady;
+
+  /// No description provided for @weatherInitialMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for a city to view its current weather.'**
+  String get weatherInitialMessage;
+
+  /// No description provided for @cityInputLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'City'**
+  String get cityInputLabel;
+
+  /// No description provided for @cityInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a city name'**
+  String get cityInputHint;
+
+  /// No description provided for @searchButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get searchButton;
+
+  /// No description provided for @loadingWeather.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetching weather data...'**
+  String get loadingWeather;
+
+  /// No description provided for @cachedWeatherNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing the last saved weather data.'**
+  String get cachedWeatherNotice;
+
+  /// No description provided for @tryAgainButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get tryAgainButton;
+
+  /// No description provided for @temperatureLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature'**
+  String get temperatureLabel;
+
+  /// No description provided for @feelsLikeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Feels like'**
+  String get feelsLikeLabel;
+
+  /// No description provided for @humidityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Humidity'**
+  String get humidityLabel;
+
+  /// No description provided for @windSpeedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Wind speed'**
+  String get windSpeedLabel;
+
+  /// No description provided for @lastUpdatedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Last updated'**
+  String get lastUpdatedLabel;
+
+  /// Displays a temperature value in Celsius.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}°C'**
+  String temperatureValue(num value);
+
+  /// Displays the humidity percentage.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}%'**
+  String humidityValue(int value);
+
+  /// Displays wind speed in kilometers per hour.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} km/h'**
+  String windSpeedValue(num value);
+
+  /// No description provided for @invalidCityError.
+  ///
+  /// In en, this message translates to:
+  /// **'City not found. Please check the city name.'**
+  String get invalidCityError;
+
+  /// No description provided for @noInternetError.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection. Please check your connection and try again.'**
+  String get noInternetError;
+
+  /// No description provided for @timeoutError.
+  ///
+  /// In en, this message translates to:
+  /// **'The request took too long. Please try again.'**
+  String get timeoutError;
+
+  /// No description provided for @unauthorizedError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to access the weather service.'**
+  String get unauthorizedError;
+
+  /// No description provided for @serverError.
+  ///
+  /// In en, this message translates to:
+  /// **'The weather service is currently unavailable. Please try again later.'**
+  String get serverError;
+
+  /// No description provided for @cacheError.
+  ///
+  /// In en, this message translates to:
+  /// **'The saved weather data could not be loaded.'**
+  String get cacheError;
+
+  /// No description provided for @configurationError.
+  ///
+  /// In en, this message translates to:
+  /// **'The application is not configured correctly.'**
+  String get configurationError;
+
+  /// No description provided for @unknownError.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get unknownError;
 }
 
 class _AppLocalizationsDelegate
