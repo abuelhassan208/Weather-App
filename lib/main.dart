@@ -25,5 +25,7 @@ Future<void> main() async {
     connectionService: InternetConnectionService(),
   );
 
-  runApp(WeatherApp(weatherRepository: weatherRepository));
+  runApp(
+    WeatherApp(weatherRepository: weatherRepository, preferences: preferences),
+  );
 }

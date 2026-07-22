@@ -36,6 +36,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tryAgainButton => 'إعادة المحاولة';
 
   @override
+  String get changeLanguage => 'تغيير اللغة';
+
+  @override
+  String get englishLanguage => 'الإنجليزية';
+
+  @override
+  String get arabicLanguage => 'العربية';
+
+  @override
   String get temperatureLabel => 'درجة الحرارة';
 
   @override

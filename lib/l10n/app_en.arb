@@ -13,6 +13,10 @@
   "cachedWeatherNotice": "Showing the last saved weather data.",
   "tryAgainButton": "Try again",
 
+  "changeLanguage": "Change language",
+  "englishLanguage": "English",
+  "arabicLanguage": "Arabic",
+
   "temperatureLabel": "Temperature",
   "feelsLikeLabel": "Feels like",
   "humidityLabel": "Humidity",

@@ -13,6 +13,10 @@
   "cachedWeatherNotice": "يتم عرض آخر بيانات طقس محفوظة.",
   "tryAgainButton": "إعادة المحاولة",
 
+  "changeLanguage": "تغيير اللغة",
+  "englishLanguage": "الإنجليزية",
+  "arabicLanguage": "العربية",
+
   "temperatureLabel": "درجة الحرارة",
   "feelsLikeLabel": "المحسوسة",
   "humidityLabel": "الرطوبة",

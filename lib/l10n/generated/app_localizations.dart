@@ -152,6 +152,24 @@ abstract class AppLocalizations {
   /// **'Try again'**
   String get tryAgainButton;
 
+  /// No description provided for @changeLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Change language'**
+  String get changeLanguage;
+
+  /// No description provided for @englishLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get englishLanguage;
+
+  /// No description provided for @arabicLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Arabic'**
+  String get arabicLanguage;
+
   /// No description provided for @temperatureLabel.
   ///
   /// In en, this message translates to:
