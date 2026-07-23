@@ -45,6 +45,9 @@ void main() {
       await pumpLanguageSwitcher(tester);
 
       expect(find.byKey(const Key('languageSwitcher')), findsOneWidget);
+      final size = tester.getSize(find.byKey(const Key('languageSwitcher')));
+      expect(size.width, greaterThanOrEqualTo(48));
+      expect(size.height, greaterThanOrEqualTo(48));
     });
 
     testWidgets('displays English and Arabic options when tapped', (

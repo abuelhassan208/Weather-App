@@ -27,19 +27,23 @@ class DioClient {
         return const TimeoutException();
 
       case DioExceptionType.connectionError:
+      case DioExceptionType.badCertificate:
         return const NetworkException();
 
       case DioExceptionType.badResponse:
         return _mapStatusCode(exception.response?.statusCode);
 
       case DioExceptionType.cancel:
-      case DioExceptionType.badCertificate:
       case DioExceptionType.unknown:
         return const UnknownException();
     }
   }
 
   AppException _mapStatusCode(int? statusCode) {
+    if (statusCode != null && statusCode >= 500 && statusCode <= 599) {
+      return const ServerException();
+    }
+
     switch (statusCode) {
       case 400:
         return const BadRequestException();
@@ -48,11 +52,6 @@ class DioClient {
         return const UnauthorizedException();
       case 404:
         return const NotFoundException();
-      case 500:
-      case 502:
-      case 503:
-      case 504:
-        return const ServerException();
       default:
         return const UnknownException();
     }

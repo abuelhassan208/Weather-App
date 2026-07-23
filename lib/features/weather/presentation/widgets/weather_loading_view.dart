@@ -14,22 +14,24 @@ class WeatherLoadingView extends StatelessWidget {
       container: true,
       liveRegion: true,
       label: localizations.loadingWeather,
-      child: Padding(
-        key: const Key('weatherLoadingView'),
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 32.h),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(
-              key: Key('weatherLoadingIndicator'),
-            ),
-            SizedBox(height: 16.h),
-            Text(
-              localizations.loadingWeather,
-              key: const Key('weatherLoadingMessage'),
-              textAlign: TextAlign.center,
-            ),
-          ],
+      child: ExcludeSemantics(
+        child: Padding(
+          key: const Key('weatherLoadingView'),
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 32.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(
+                key: Key('weatherLoadingIndicator'),
+              ),
+              SizedBox(height: 16.h),
+              Text(
+                localizations.loadingWeather,
+                key: const Key('weatherLoadingMessage'),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );

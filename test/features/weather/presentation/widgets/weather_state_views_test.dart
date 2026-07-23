@@ -102,6 +102,20 @@ void main() {
 
         expect(find.text('جارٍ تحميل بيانات الطقس...'), findsOneWidget);
       });
+
+      testWidgets('announces one localized live-region message', (
+        tester,
+      ) async {
+        final handle = tester.ensureSemantics();
+
+        await pumpLocalizedWidget(tester, child: const WeatherLoadingView());
+
+        expect(
+          find.bySemanticsLabel('Fetching weather data...'),
+          findsOneWidget,
+        );
+        handle.dispose();
+      });
     });
 
     group('WeatherErrorView', () {
