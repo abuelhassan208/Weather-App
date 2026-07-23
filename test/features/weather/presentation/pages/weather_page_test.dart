@@ -92,7 +92,9 @@ void main() {
                     localizationsDelegates:
                         AppLocalizations.localizationsDelegates,
                     supportedLocales: AppLocalizations.supportedLocales,
-                    home: const WeatherPage(),
+                    home: WeatherPage(
+                      now: () => DateTime.utc(2026, 7, 23, 10, 5),
+                    ),
                   );
                 },
               );
@@ -110,6 +112,8 @@ void main() {
         await pumpWeatherPage(tester, bloc: bloc);
 
         expect(find.byKey(const Key('weatherPageTitle')), findsOneWidget);
+        expect(find.byKey(const Key('weatherPageBackground')), findsOneWidget);
+        expect(find.byKey(const Key('weatherBrandIcon')), findsOneWidget);
         expect(find.byKey(const Key('citySearchTextField')), findsOneWidget);
         expect(find.byKey(const Key('citySearchButton')), findsOneWidget);
         expect(find.byKey(const Key('weatherInitialView')), findsOneWidget);
@@ -159,9 +163,26 @@ void main() {
         expect(find.byKey(const Key('weatherSuccessContent')), findsOneWidget);
         expect(find.byKey(const Key('weatherCard')), findsOneWidget);
         expect(find.text('Cairo, Egypt'), findsOneWidget);
+        expect(find.text('30.0°C'), findsOneWidget);
+        expect(find.text('40%'), findsOneWidget);
+        expect(find.text('10.0 km/h'), findsOneWidget);
         expect(find.byKey(const Key('cachedWeatherNotice')), findsNothing);
       },
     );
+
+    testWidgets('formats WeatherSuccess card data in Arabic', (tester) async {
+      when(
+        () => bloc.state,
+      ).thenReturn(WeatherSuccess(weather: testWeather, isFromCache: false));
+
+      await pumpWeatherPage(tester, bloc: bloc, locale: const Locale('ar'));
+
+      expect(find.byKey(const Key('weatherCard')), findsOneWidget);
+      expect(find.text('Cairo, Egypt'), findsOneWidget);
+      expect(find.text('30.0°م'), findsOneWidget);
+      expect(find.text('40٪'), findsOneWidget);
+      expect(find.text('10.0 كم/س'), findsOneWidget);
+    });
 
     testWidgets(
       'renders cached notice and weather card on WeatherSuccess (isFromCache: true)',
@@ -178,6 +199,12 @@ void main() {
 
         expect(find.byKey(const Key('cachedWeatherNotice')), findsOneWidget);
         expect(find.byKey(const Key('cachedWeatherMessage')), findsOneWidget);
+        expect(
+          find.textContaining(
+            'Showing saved weather for Cairo. Saved 5 minutes ago.',
+          ),
+          findsOneWidget,
+        );
         expect(find.byKey(const Key('weatherCard')), findsOneWidget);
       },
     );
@@ -284,6 +311,8 @@ void main() {
         surfaceSize: const Size(320, 640),
       );
 
+      expect(find.byKey(const Key('weatherCardNarrowLayout')), findsOneWidget);
+      expect(find.byKey(const Key('weatherCardWideLayout')), findsNothing);
       expect(tester.takeException(), isNull);
     });
 
@@ -301,6 +330,8 @@ void main() {
       );
 
       expect(find.byKey(const Key('weatherCard')), findsOneWidget);
+      expect(find.byKey(const Key('weatherCardWideLayout')), findsOneWidget);
+      expect(find.byKey(const Key('weatherCardNarrowLayout')), findsNothing);
       expect(tester.takeException(), isNull);
     });
 

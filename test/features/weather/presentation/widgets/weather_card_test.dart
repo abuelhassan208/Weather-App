@@ -1,27 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:weather_app/features/weather/data/models/weather_model.dart';
+import 'package:weather_app/features/weather/presentation/models/weather_card_data.dart';
 import 'package:weather_app/features/weather/presentation/widgets/weather_card.dart';
 import 'package:weather_app/l10n/generated/app_localizations.dart';
 
 void main() {
   group('WeatherCard', () {
-    final weather = WeatherModel(
-      cityName: 'Cairo',
-      country: 'Egypt',
-      temperatureC: 30.0,
-      feelsLikeC: 32.0,
+    const data = WeatherCardData(
+      locationText: 'Cairo, Egypt',
       conditionText: 'Sunny',
-      iconUrl: '',
-      humidity: 40,
-      windKph: 10.0,
-      lastUpdated: DateTime.utc(2026, 7, 22, 18),
+      temperatureText: '30.0°C',
+      feelsLikeLabel: 'Feels like',
+      feelsLikeText: '32.0°C',
+      humidityLabel: 'Humidity',
+      humidityText: '40%',
+      windSpeedLabel: 'Wind speed',
+      windSpeedText: '10.0 km/h',
+      lastUpdatedText: 'Last updated: Jul 22, 2026 8:00 PM',
+      locationSemanticLabel: 'Location, Cairo, Egypt',
+      conditionSemanticLabel: 'Sunny',
+      temperatureSemanticLabel: 'Temperature, 30.0°C',
+      feelsLikeSemanticLabel: 'Feels like, 32.0°C',
+      humiditySemanticLabel: 'Humidity, 40 percent',
+      windSemanticLabel: 'Wind speed, 10.0 km/h',
+      lastUpdatedSemanticLabel: 'Last updated, Jul 22, 2026 8:00 PM',
     );
 
     Future<void> pumpWeatherCard(
       WidgetTester tester, {
-      required WeatherModel weather,
+      WeatherCardData cardData = data,
       Locale locale = const Locale('en'),
       Size surfaceSize = const Size(375, 812),
       double textScale = 1,
@@ -52,7 +60,7 @@ void main() {
                   child: Center(
                     child: SizedBox(
                       width: surfaceSize.width,
-                      child: WeatherCard(weather: weather),
+                      child: WeatherCard(data: cardData),
                     ),
                   ),
                 ),
@@ -65,50 +73,119 @@ void main() {
       await tester.pump();
     }
 
-    testWidgets('renders weather card with location and condition', (
+    testWidgets('renders every supplied display value unchanged', (
       tester,
     ) async {
-      await pumpWeatherCard(tester, weather: weather);
+      const unusualData = WeatherCardData(
+        locationText: 'LOCATION::ready',
+        conditionText: 'CONDITION::ready',
+        temperatureText: 'TEMP::ready',
+        feelsLikeLabel: 'FEELS_LABEL::ready',
+        feelsLikeText: 'FEELS_VALUE::ready',
+        humidityLabel: 'HUMIDITY_LABEL::ready',
+        humidityText: 'HUMIDITY_VALUE::ready',
+        windSpeedLabel: 'WIND_LABEL::ready',
+        windSpeedText: 'WIND_VALUE::ready',
+        lastUpdatedText: 'UPDATED::ready',
+        locationSemanticLabel: 'location semantic ready',
+        conditionSemanticLabel: 'condition semantic ready',
+        temperatureSemanticLabel: 'temperature semantic ready',
+        feelsLikeSemanticLabel: 'feels semantic ready',
+        humiditySemanticLabel: 'humidity semantic ready',
+        windSemanticLabel: 'wind semantic ready',
+        lastUpdatedSemanticLabel: 'updated semantic ready',
+      );
 
-      expect(find.byKey(const Key('weatherCard')), findsOneWidget);
-      expect(find.byKey(const Key('weatherLocation')), findsOneWidget);
-      expect(find.byKey(const Key('weatherCondition')), findsOneWidget);
-      expect(find.text('Cairo, Egypt'), findsOneWidget);
-      expect(find.text('Sunny'), findsOneWidget);
+      await pumpWeatherCard(tester, cardData: unusualData);
+
+      for (final text in [
+        unusualData.locationText,
+        unusualData.conditionText,
+        unusualData.temperatureText,
+        unusualData.feelsLikeLabel,
+        unusualData.feelsLikeText,
+        unusualData.humidityLabel,
+        unusualData.humidityText,
+        unusualData.windSpeedLabel,
+        unusualData.windSpeedText,
+        unusualData.lastUpdatedText,
+      ]) {
+        expect(find.text(text), findsOneWidget);
+      }
     });
 
-    testWidgets('displays English localized labels and metric values', (
+    testWidgets('uses supplied accessible semantic labels', (tester) async {
+      final handle = tester.ensureSemantics();
+      await pumpWeatherCard(tester);
+
+      expect(
+        tester.getSemantics(find.byKey(const Key('weatherLocation'))).label,
+        contains(data.locationSemanticLabel),
+      );
+      expect(
+        tester.getSemantics(find.byKey(const Key('weatherCondition'))).label,
+        contains(data.conditionSemanticLabel),
+      );
+      expect(
+        tester.getSemantics(find.byKey(const Key('weatherTemperature'))).label,
+        contains(data.temperatureSemanticLabel),
+      );
+      expect(
+        tester.getSemantics(find.byKey(const Key('weatherHumidity'))).label,
+        contains(data.humiditySemanticLabel),
+      );
+      expect(
+        tester.getSemantics(find.byKey(const Key('weatherWindSpeed'))).label,
+        contains(data.windSemanticLabel),
+      );
+      expect(
+        tester.getSemantics(find.byKey(const Key('weatherLastUpdated'))).label,
+        contains(data.lastUpdatedSemanticLabel),
+      );
+      handle.dispose();
+    });
+
+    testWidgets('displays fallback icon when icon URL is absent', (
       tester,
     ) async {
-      await pumpWeatherCard(tester, weather: weather);
+      await pumpWeatherCard(tester);
 
-      expect(find.byKey(const Key('weatherTemperature')), findsOneWidget);
-      expect(find.byKey(const Key('weatherFeelsLike')), findsOneWidget);
-      expect(find.byKey(const Key('weatherHumidity')), findsOneWidget);
-      expect(find.byKey(const Key('weatherWindSpeed')), findsOneWidget);
-
-      expect(find.text('Feels like'), findsOneWidget);
-      expect(find.text('Humidity'), findsOneWidget);
-      expect(find.text('Wind speed'), findsOneWidget);
-      expect(find.byKey(const Key('weatherLastUpdated')), findsOneWidget);
+      expect(find.byKey(const Key('weatherIconFallback')), findsOneWidget);
+      expect(find.byKey(const Key('weatherNetworkIcon')), findsNothing);
     });
 
-    testWidgets('displays Arabic localized labels and metric values', (
+    testWidgets('displays network image when icon URL is supplied', (
       tester,
     ) async {
       await pumpWeatherCard(
         tester,
-        weather: weather,
-        locale: const Locale('ar'),
+        cardData: const WeatherCardData(
+          locationText: 'Cairo',
+          conditionText: 'Sunny',
+          temperatureText: '30°C',
+          feelsLikeLabel: 'Feels like',
+          feelsLikeText: '32°C',
+          humidityLabel: 'Humidity',
+          humidityText: '40%',
+          windSpeedLabel: 'Wind speed',
+          windSpeedText: '10 km/h',
+          lastUpdatedText: 'Last updated: now',
+          locationSemanticLabel: 'Location, Cairo',
+          conditionSemanticLabel: 'Sunny',
+          temperatureSemanticLabel: 'Temperature, 30°C',
+          feelsLikeSemanticLabel: 'Feels like, 32°C',
+          humiditySemanticLabel: 'Humidity, 40 percent',
+          windSemanticLabel: 'Wind speed, 10 km/h',
+          lastUpdatedSemanticLabel: 'Last updated, now',
+          iconUrl: 'https://example.com/weather.png',
+        ),
       );
 
-      expect(find.text('المحسوسة'), findsOneWidget);
-      expect(find.text('الرطوبة'), findsOneWidget);
-      expect(find.text('سرعة الرياح'), findsOneWidget);
-      expect(find.byKey(const Key('weatherTemperature')), findsOneWidget);
-      expect(find.byKey(const Key('weatherFeelsLike')), findsOneWidget);
-      expect(find.byKey(const Key('weatherHumidity')), findsOneWidget);
-      expect(find.byKey(const Key('weatherWindSpeed')), findsOneWidget);
+      expect(find.byKey(const Key('weatherNetworkIcon')), findsOneWidget);
+
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('weatherIconFallback')), findsOneWidget);
     });
 
     for (final testCase in <({Size size, double scale, Locale locale})>[
@@ -120,25 +197,33 @@ void main() {
       (size: Size(900, 900), scale: 2, locale: Locale('en')),
     ]) {
       testWidgets(
-        'renders long content at ${testCase.size} scale ${testCase.scale} ${testCase.locale.languageCode}',
+        'renders supplied long content at ${testCase.size} scale ${testCase.scale}',
         (tester) async {
-          final longWeather = WeatherModel(
-            cityName: 'San Fernando del Valle de Catamarca',
-            country: 'Argentina',
-            temperatureC: 30,
-            feelsLikeC: 32,
+          final longData = WeatherCardData(
+            locationText: 'San Fernando del Valle de Catamarca, Argentina',
             conditionText: testCase.locale.languageCode == 'ar'
                 ? 'عواصف رعدية مصحوبة بأمطار غزيرة ورياح شديدة'
                 : 'Thunderstorms with heavy rain and strong winds',
-            iconUrl: '',
-            humidity: 80,
-            windKph: 45,
-            lastUpdated: DateTime.utc(2026, 7, 23, 10, 30),
+            temperatureText: data.temperatureText,
+            feelsLikeLabel: data.feelsLikeLabel,
+            feelsLikeText: data.feelsLikeText,
+            humidityLabel: data.humidityLabel,
+            humidityText: data.humidityText,
+            windSpeedLabel: data.windSpeedLabel,
+            windSpeedText: data.windSpeedText,
+            lastUpdatedText: data.lastUpdatedText,
+            locationSemanticLabel: data.locationSemanticLabel,
+            conditionSemanticLabel: data.conditionSemanticLabel,
+            temperatureSemanticLabel: data.temperatureSemanticLabel,
+            feelsLikeSemanticLabel: data.feelsLikeSemanticLabel,
+            humiditySemanticLabel: data.humiditySemanticLabel,
+            windSemanticLabel: data.windSemanticLabel,
+            lastUpdatedSemanticLabel: data.lastUpdatedSemanticLabel,
           );
 
           await pumpWeatherCard(
             tester,
-            weather: longWeather,
+            cardData: longData,
             locale: testCase.locale,
             surfaceSize: testCase.size,
             textScale: testCase.scale,
@@ -149,126 +234,5 @@ void main() {
         },
       );
     }
-
-    testWidgets('groups weather metrics into accessible semantic labels', (
-      tester,
-    ) async {
-      final handle = tester.ensureSemantics();
-      await pumpWeatherCard(tester, weather: weather);
-
-      expect(
-        tester.getSemantics(find.byKey(const Key('weatherLocation'))).label,
-        contains('Location'),
-      );
-      final cardSemantics = tester
-          .getSemantics(find.byKey(const Key('weatherHumidity')))
-          .label;
-      expect(cardSemantics, contains('Humidity, 40 percent'));
-      expect(
-        tester.getSemantics(find.byKey(const Key('weatherWindSpeed'))).label,
-        contains('Wind speed'),
-      );
-      expect(
-        tester.getSemantics(find.byKey(const Key('weatherLastUpdated'))).label,
-        contains('Last updated'),
-      );
-      handle.dispose();
-    });
-
-    testWidgets('displays fallback icon when iconUrl is empty', (tester) async {
-      await pumpWeatherCard(tester, weather: weather);
-
-      expect(find.byKey(const Key('weatherIconFallback')), findsOneWidget);
-      expect(find.byKey(const Key('weatherNetworkIcon')), findsNothing);
-    });
-
-    testWidgets('displays network image when iconUrl is present', (
-      tester,
-    ) async {
-      final weatherWithIcon = WeatherModel(
-        cityName: 'Cairo',
-        country: 'Egypt',
-        temperatureC: 30.0,
-        feelsLikeC: 32.0,
-        conditionText: 'Sunny',
-        iconUrl: 'https://example.com/weather.png',
-        humidity: 40,
-        windKph: 10.0,
-        lastUpdated: DateTime.utc(2026, 7, 22, 18),
-      );
-
-      await pumpWeatherCard(tester, weather: weatherWithIcon);
-
-      expect(find.byKey(const Key('weatherNetworkIcon')), findsOneWidget);
-    });
-
-    testWidgets('formats location correctly when country is empty', (
-      tester,
-    ) async {
-      final weatherNoCountry = WeatherModel(
-        cityName: 'Cairo',
-        country: '',
-        temperatureC: 30.0,
-        feelsLikeC: 32.0,
-        conditionText: 'Sunny',
-        iconUrl: '',
-        humidity: 40,
-        windKph: 10.0,
-        lastUpdated: DateTime.utc(2026, 7, 22, 18),
-      );
-
-      await pumpWeatherCard(tester, weather: weatherNoCountry);
-
-      expect(find.text('Cairo'), findsOneWidget);
-      expect(find.text('Cairo,'), findsNothing);
-    });
-
-    testWidgets('handles empty text data safely with fallback dash', (
-      tester,
-    ) async {
-      final emptyWeather = WeatherModel(
-        cityName: '',
-        country: '',
-        temperatureC: 0.0,
-        feelsLikeC: 0.0,
-        conditionText: '',
-        iconUrl: '',
-        humidity: 0,
-        windKph: 0.0,
-        lastUpdated: DateTime.utc(2026, 7, 22, 18),
-      );
-
-      await pumpWeatherCard(tester, weather: emptyWeather);
-
-      expect(find.byKey(const Key('weatherCard')), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('renders without overflow on small surface size', (
-      tester,
-    ) async {
-      await pumpWeatherCard(
-        tester,
-        weather: weather,
-        surfaceSize: const Size(320, 640),
-      );
-
-      expect(find.byKey(const Key('weatherCard')), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('renders without overflow on wide surface size', (
-      tester,
-    ) async {
-      await pumpWeatherCard(
-        tester,
-        weather: weather,
-        surfaceSize: const Size(900, 900),
-      );
-
-      expect(find.byKey(const Key('weatherCard')), findsOneWidget);
-      expect(find.text('Cairo, Egypt'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
   });
 }

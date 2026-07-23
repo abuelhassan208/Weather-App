@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:weather_app/features/weather/logic/bloc/weather_state.dart';
+import 'package:weather_app/features/weather/presentation/models/cached_weather_notice_data.dart';
+import 'package:weather_app/features/weather/presentation/models/weather_error_data.dart';
 import 'package:weather_app/features/weather/presentation/widgets/cached_weather_notice.dart';
 import 'package:weather_app/features/weather/presentation/widgets/weather_error_view.dart';
 import 'package:weather_app/features/weather/presentation/widgets/weather_initial_view.dart';
@@ -104,63 +105,43 @@ void main() {
     });
 
     group('WeatherErrorView', () {
-      testWidgets('displays correct English message for all failure types', (
+      testWidgets('displays supplied English error data unchanged', (
         tester,
       ) async {
-        final expectedMessages = {
-          WeatherFailureType.invalidCity:
-              'City not found. Please check the city name.',
-          WeatherFailureType.noInternet:
-              'No internet connection. Please check your connection and try again.',
-          WeatherFailureType.timeout:
-              'The request took too long. Please try again.',
-          WeatherFailureType.unauthorized:
-              'Unable to access the weather service.',
-          WeatherFailureType.server:
-              'The weather service is currently unavailable. Please try again later.',
-          WeatherFailureType.cache:
-              'The saved weather data could not be loaded.',
-          WeatherFailureType.configuration:
-              'The application is not configured correctly.',
-          WeatherFailureType.unknown: 'Something went wrong. Please try again.',
-        };
+        const data = WeatherErrorData(
+          message: 'DISPLAY::error message',
+          retryLabel: 'DISPLAY::retry',
+        );
 
-        for (final entry in expectedMessages.entries) {
-          await pumpLocalizedWidget(
-            tester,
-            child: WeatherErrorView(failureType: entry.key, onRetry: () {}),
-          );
+        await pumpLocalizedWidget(
+          tester,
+          child: WeatherErrorView(data: data, onRetry: () {}),
+        );
 
-          expect(find.byKey(const Key('weatherErrorView')), findsOneWidget);
-          expect(find.byKey(const Key('weatherErrorIcon')), findsOneWidget);
-          expect(find.byKey(const Key('weatherErrorMessage')), findsOneWidget);
-          expect(find.byKey(const Key('weatherRetryButton')), findsOneWidget);
-          expect(find.text(entry.value), findsOneWidget);
-        }
+        expect(find.byKey(const Key('weatherErrorView')), findsOneWidget);
+        expect(find.byKey(const Key('weatherErrorIcon')), findsOneWidget);
+        expect(find.byKey(const Key('weatherErrorMessage')), findsOneWidget);
+        expect(find.byKey(const Key('weatherRetryButton')), findsOneWidget);
+        expect(find.text(data.message), findsOneWidget);
+        expect(find.text(data.retryLabel), findsOneWidget);
       });
 
-      testWidgets('displays correct Arabic messages for failure types', (
+      testWidgets('displays supplied Arabic error data unchanged', (
         tester,
       ) async {
-        final expectedMessages = {
-          WeatherFailureType.invalidCity:
-              'لم يتم العثور على المدينة. تحقق من اسم المدينة.',
-          WeatherFailureType.noInternet:
-              'لا يوجد اتصال بالإنترنت. تحقق من الاتصال ثم حاول مرة أخرى.',
-          WeatherFailureType.server:
-              'خدمة الطقس غير متاحة حاليًا. حاول مرة أخرى لاحقًا.',
-          WeatherFailureType.unknown: 'حدث خطأ غير متوقع. حاول مرة أخرى.',
-        };
+        const data = WeatherErrorData(
+          message: 'حدث خطأ تجريبي',
+          retryLabel: 'إعادة العرض',
+        );
 
-        for (final entry in expectedMessages.entries) {
-          await pumpLocalizedWidget(
-            tester,
-            child: WeatherErrorView(failureType: entry.key, onRetry: () {}),
-            locale: const Locale('ar'),
-          );
+        await pumpLocalizedWidget(
+          tester,
+          child: WeatherErrorView(data: data, onRetry: () {}),
+          locale: const Locale('ar'),
+        );
 
-          expect(find.text(entry.value), findsOneWidget);
-        }
+        expect(find.text(data.message), findsOneWidget);
+        expect(find.text(data.retryLabel), findsOneWidget);
       });
 
       testWidgets('invokes onRetry callback when retry button is tapped', (
@@ -171,7 +152,10 @@ void main() {
         await pumpLocalizedWidget(
           tester,
           child: WeatherErrorView(
-            failureType: WeatherFailureType.noInternet,
+            data: const WeatherErrorData(
+              message: 'Network error',
+              retryLabel: 'Try again',
+            ),
             onRetry: () {
               retryCount++;
             },
@@ -191,10 +175,11 @@ void main() {
       ) async {
         await pumpLocalizedWidget(
           tester,
-          child: CachedWeatherNotice(
-            cityName: 'Cairo',
-            cachedAt: DateTime.utc(2026, 7, 23, 9, 55),
-            now: () => DateTime.utc(2026, 7, 23, 10),
+          child: const CachedWeatherNotice(
+            data: CachedWeatherNoticeData(
+              message:
+                  'Showing saved weather for Cairo. Saved 5 minutes ago. It may not be current.',
+            ),
           ),
         );
 
@@ -202,6 +187,12 @@ void main() {
         expect(find.byKey(const Key('cachedWeatherIcon')), findsOneWidget);
         expect(find.byKey(const Key('cachedWeatherMessage')), findsOneWidget);
         expect(find.textContaining('Saved 5 minutes ago'), findsOneWidget);
+        expect(
+          find.bySemanticsLabel(
+            'Showing saved weather for Cairo. Saved 5 minutes ago. It may not be current.',
+          ),
+          findsOneWidget,
+        );
       });
 
       testWidgets('displays cached notice elements with Arabic text', (
@@ -209,10 +200,11 @@ void main() {
       ) async {
         await pumpLocalizedWidget(
           tester,
-          child: CachedWeatherNotice(
-            cityName: 'القاهرة',
-            cachedAt: DateTime.utc(2026, 7, 23, 9, 55),
-            now: () => DateTime.utc(2026, 7, 23, 10),
+          child: const CachedWeatherNotice(
+            data: CachedWeatherNoticeData(
+              message:
+                  'يتم عرض طقس محفوظ لمدينة القاهرة. تم الحفظ منذ 5 دقائق. قد لا تكون البيانات لحظية.',
+            ),
           ),
           locale: const Locale('ar'),
         );
@@ -232,12 +224,14 @@ void main() {
               const WeatherInitialView(),
               const WeatherLoadingView(),
               WeatherErrorView(
-                failureType: WeatherFailureType.noInternet,
+                data: const WeatherErrorData(
+                  message: 'Network error',
+                  retryLabel: 'Try again',
+                ),
                 onRetry: () {},
               ),
-              CachedWeatherNotice(
-                cityName: 'Cairo',
-                cachedAt: DateTime.utc(2026, 7, 23, 10),
+              const CachedWeatherNotice(
+                data: CachedWeatherNoticeData(message: 'Cached weather'),
               ),
             ],
           ),
@@ -257,12 +251,14 @@ void main() {
               const WeatherInitialView(),
               const WeatherLoadingView(),
               WeatherErrorView(
-                failureType: WeatherFailureType.server,
+                data: const WeatherErrorData(
+                  message: 'Server error',
+                  retryLabel: 'Try again',
+                ),
                 onRetry: () {},
               ),
-              CachedWeatherNotice(
-                cityName: 'Cairo',
-                cachedAt: DateTime.utc(2026, 7, 23, 10),
+              const CachedWeatherNotice(
+                data: CachedWeatherNoticeData(message: 'Cached weather'),
               ),
             ],
           ),
@@ -271,6 +267,33 @@ void main() {
 
         expect(tester.takeException(), isNull);
       });
+    });
+
+    testWidgets('error is a localized live region', (tester) async {
+      final handle = tester.ensureSemantics();
+
+      await pumpLocalizedWidget(
+        tester,
+        child: WeatherErrorView(
+          data: const WeatherErrorData(
+            message:
+                'No internet connection. Please check your connection and try again.',
+            retryLabel: 'Try again',
+          ),
+          onRetry: () {},
+        ),
+      );
+      expect(
+        find.bySemanticsLabel(
+          'No internet connection. Please check your connection and try again.',
+        ),
+        findsOneWidget,
+      );
+      final retrySize = tester.getSize(
+        find.byKey(const Key('weatherRetryButton')),
+      );
+      expect(retrySize.height, greaterThanOrEqualTo(48));
+      handle.dispose();
     });
   });
 }

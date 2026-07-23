@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:intl/intl.dart';
 
-import '../../../../l10n/generated/app_localizations.dart';
-import '../../data/models/weather_model.dart';
+import '../models/weather_card_data.dart';
 
 class WeatherCard extends StatelessWidget {
-  const WeatherCard({required this.weather, super.key});
+  const WeatherCard({required this.data, super.key});
 
-  final WeatherModel weather;
+  final WeatherCardData data;
 
   Widget _buildWeatherIcon() {
-    if (weather.iconUrl.trim().isEmpty) {
+    if (data.iconUrl == null) {
       return const ExcludeSemantics(
         child: Icon(
           Icons.cloud_outlined,
@@ -22,7 +20,7 @@ class WeatherCard extends StatelessWidget {
     }
 
     return Image.network(
-      weather.iconUrl,
+      data.iconUrl!,
       key: const Key('weatherNetworkIcon'),
       width: 64.w,
       height: 64.w,
@@ -43,35 +41,17 @@ class WeatherCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
     final theme = Theme.of(context);
-
-    final rawLocation = [
-      weather.cityName,
-      weather.country,
-    ].where((value) => value.trim().isNotEmpty).join(', ');
-    final location = rawLocation.isEmpty ? '—' : rawLocation;
-
-    final conditionText = weather.conditionText.trim().isEmpty
-        ? '—'
-        : weather.conditionText;
-    final locale = Localizations.localeOf(context).toLanguageTag();
-    final lastUpdatedText = DateFormat.yMMMd(
-      locale,
-    ).add_jm().format(weather.lastUpdated.toLocal());
-    final temperatureText = localizations.temperatureValue(
-      weather.temperatureC,
-    );
 
     return Card(
       key: const Key('weatherCard'),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
       child: Padding(
         padding: EdgeInsets.all(20.w),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final isWide = constraints.maxWidth >= 700;
+            final isWide =
+                constraints.maxWidth >= 560 &&
+                MediaQuery.textScalerOf(context).scale(1) <= 1.5;
 
             return Column(
               mainAxisSize: MainAxisSize.min,
@@ -79,6 +59,7 @@ class WeatherCard extends StatelessWidget {
               children: [
                 if (isWide)
                   Row(
+                    key: const Key('weatherCardWideLayout'),
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       _buildWeatherIcon(),
@@ -88,10 +69,10 @@ class WeatherCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Semantics(
-                              label: localizations.locationSemantics(location),
+                              label: data.locationSemanticLabel,
                               child: ExcludeSemantics(
                                 child: Text(
-                                  location,
+                                  data.locationText,
                                   key: const Key('weatherLocation'),
                                   style: theme.textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.bold,
@@ -100,23 +81,26 @@ class WeatherCard extends StatelessWidget {
                               ),
                             ),
                             SizedBox(height: 4.h),
-                            Text(
-                              conditionText,
-                              key: const Key('weatherCondition'),
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
+                            Semantics(
+                              label: data.conditionSemanticLabel,
+                              child: ExcludeSemantics(
+                                child: Text(
+                                  data.conditionText,
+                                  key: const Key('weatherCondition'),
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
                       Semantics(
-                        label: localizations.temperatureSemantics(
-                          temperatureText,
-                        ),
+                        label: data.temperatureSemanticLabel,
                         child: ExcludeSemantics(
                           child: Text(
-                            temperatureText,
+                            data.temperatureText,
                             key: const Key('weatherTemperature'),
                             style: theme.textTheme.displayMedium?.copyWith(
                               fontWeight: FontWeight.bold,
@@ -129,16 +113,17 @@ class WeatherCard extends StatelessWidget {
                   )
                 else
                   Column(
+                    key: const Key('weatherCardNarrowLayout'),
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
                             child: Semantics(
-                              label: localizations.locationSemantics(location),
+                              label: data.locationSemanticLabel,
                               child: ExcludeSemantics(
                                 child: Text(
-                                  location,
+                                  data.locationText,
                                   key: const Key('weatherLocation'),
                                   style: theme.textTheme.titleLarge?.copyWith(
                                     fontWeight: FontWeight.bold,
@@ -154,21 +139,24 @@ class WeatherCard extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text(
-                            conditionText,
-                            key: const Key('weatherCondition'),
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+                          Semantics(
+                            label: data.conditionSemanticLabel,
+                            child: ExcludeSemantics(
+                              child: Text(
+                                data.conditionText,
+                                key: const Key('weatherCondition'),
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
                             ),
                           ),
                           SizedBox(height: 8.h),
                           Semantics(
-                            label: localizations.temperatureSemantics(
-                              temperatureText,
-                            ),
+                            label: data.temperatureSemanticLabel,
                             child: ExcludeSemantics(
                               child: Text(
-                                temperatureText,
+                                data.temperatureText,
                                 key: const Key('weatherTemperature'),
                                 style: theme.textTheme.displaySmall?.copyWith(
                                   fontWeight: FontWeight.bold,
@@ -193,38 +181,32 @@ class WeatherCard extends StatelessWidget {
                     _WeatherMetric(
                       key: const Key('weatherFeelsLike'),
                       icon: Icons.thermostat_outlined,
-                      label: localizations.feelsLikeLabel,
-                      value: localizations.temperatureValue(weather.feelsLikeC),
-                      semanticsLabel: localizations.feelsLikeSemantics(
-                        localizations.temperatureValue(weather.feelsLikeC),
-                      ),
+                      label: data.feelsLikeLabel,
+                      value: data.feelsLikeText,
+                      semanticsLabel: data.feelsLikeSemanticLabel,
                     ),
                     _WeatherMetric(
                       key: const Key('weatherHumidity'),
                       icon: Icons.water_drop_outlined,
-                      label: localizations.humidityLabel,
-                      value: localizations.humidityValue(weather.humidity),
-                      semanticsLabel: localizations.humiditySemantics(
-                        weather.humidity,
-                      ),
+                      label: data.humidityLabel,
+                      value: data.humidityText,
+                      semanticsLabel: data.humiditySemanticLabel,
                     ),
                     _WeatherMetric(
                       key: const Key('weatherWindSpeed'),
                       icon: Icons.air,
-                      label: localizations.windSpeedLabel,
-                      value: localizations.windSpeedValue(weather.windKph),
-                      semanticsLabel: localizations.windSemantics(
-                        localizations.windSpeedValue(weather.windKph),
-                      ),
+                      label: data.windSpeedLabel,
+                      value: data.windSpeedText,
+                      semanticsLabel: data.windSemanticLabel,
                     ),
                   ],
                 ),
                 SizedBox(height: 16.h),
                 Semantics(
-                  label: localizations.lastUpdatedSemantics(lastUpdatedText),
+                  label: data.lastUpdatedSemanticLabel,
                   child: ExcludeSemantics(
                     child: Text(
-                      '${localizations.lastUpdatedLabel}: $lastUpdatedText',
+                      data.lastUpdatedText,
                       key: const Key('weatherLastUpdated'),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,

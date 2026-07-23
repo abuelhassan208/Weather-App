@@ -77,7 +77,7 @@ class _CitySearchFormState extends State<CitySearchForm> {
                 decoration: InputDecoration(
                   labelText: localizations.cityInputLabel,
                   hintText: localizations.cityInputHint,
-                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.location_city_outlined),
                 ),
                 validator: (value) => value == null || value.trim().isEmpty
                     ? localizations.emptyCityValidation
@@ -89,11 +89,12 @@ class _CitySearchFormState extends State<CitySearchForm> {
                   }
                 },
               );
-              final button = FilledButton(
+              final button = FilledButton.icon(
                 key: const Key('citySearchButton'),
                 style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
                 onPressed: isLoading ? null : _submitSearch,
-                child: Text(localizations.searchButton),
+                icon: const Icon(Icons.search),
+                label: Text(localizations.searchButton),
               );
 
               if (stackControls) {
