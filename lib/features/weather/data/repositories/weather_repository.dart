@@ -7,13 +7,18 @@ import '../services/weather_cache_service.dart';
 import '../services/weather_service.dart';
 
 class WeatherResult extends Equatable {
-  const WeatherResult({required this.weather, required this.isFromCache});
+  const WeatherResult({
+    required this.weather,
+    required this.isFromCache,
+    this.cachedAt,
+  }) : assert(!isFromCache || cachedAt != null);
 
   final WeatherModel weather;
   final bool isFromCache;
+  final DateTime? cachedAt;
 
   @override
-  List<Object?> get props => [weather, isFromCache];
+  List<Object?> get props => [weather, isFromCache, cachedAt];
 }
 
 class WeatherRepository {
@@ -27,43 +32,68 @@ class WeatherRepository {
   final WeatherCacheService cacheService;
   final InternetConnectionService connectionService;
 
-  Future<WeatherResult> getCurrentWeather(String city) async {
+  Future<WeatherResult> getCurrentWeather(
+    String city, {
+    String languageCode = 'en',
+  }) async {
     final hasInternet = await connectionService.hasInternetConnection;
 
     if (!hasInternet) {
-      return _getCachedWeatherOrThrowNetworkException();
+      return await _getCachedWeatherOrThrow(
+        city,
+        languageCode,
+        const NetworkException(),
+      );
     }
 
     try {
-      final weather = await weatherService.fetchCurrentWeather(city);
+      final weather = await weatherService.fetchCurrentWeather(
+        city,
+        languageCode: languageCode,
+      );
 
-      await _saveWeatherWithoutBlockingResult(weather);
+      await _saveWeatherWithoutBlockingResult(city, languageCode, weather);
 
       return WeatherResult(weather: weather, isFromCache: false);
     } on NetworkException catch (exception) {
-      return _getCachedWeatherOrThrow(exception);
+      return await _getCachedWeatherOrThrow(city, languageCode, exception);
     } on TimeoutException catch (exception) {
-      return _getCachedWeatherOrThrow(exception);
+      return await _getCachedWeatherOrThrow(city, languageCode, exception);
     }
   }
 
-  WeatherResult _getCachedWeatherOrThrowNetworkException() {
-    return _getCachedWeatherOrThrow(const NetworkException());
-  }
+  Future<WeatherResult> _getCachedWeatherOrThrow(
+    String requestedCity,
+    String languageCode,
+    AppException fallbackException,
+  ) async {
+    final entry = await cacheService.getCachedEntry(
+      requestedCity,
+      languageCode: languageCode,
+    );
 
-  WeatherResult _getCachedWeatherOrThrow(AppException fallbackException) {
-    final cachedWeather = cacheService.getCachedWeather();
-
-    if (cachedWeather == null) {
+    if (entry == null) {
       throw fallbackException;
     }
 
-    return WeatherResult(weather: cachedWeather, isFromCache: true);
+    return WeatherResult(
+      weather: entry.weather,
+      isFromCache: true,
+      cachedAt: entry.cachedAt,
+    );
   }
 
-  Future<void> _saveWeatherWithoutBlockingResult(WeatherModel weather) async {
+  Future<void> _saveWeatherWithoutBlockingResult(
+    String requestedCity,
+    String languageCode,
+    WeatherModel weather,
+  ) async {
     try {
-      await cacheService.saveWeather(weather);
+      await cacheService.saveWeather(
+        requestedCity,
+        weather,
+        languageCode: languageCode,
+      );
     } on CacheException {
       // Cache failure must not hide successfully fetched weather data.
     }

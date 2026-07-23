@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../data/models/weather_model.dart';
@@ -11,10 +12,12 @@ class WeatherCard extends StatelessWidget {
 
   Widget _buildWeatherIcon() {
     if (weather.iconUrl.trim().isEmpty) {
-      return const Icon(
-        Icons.cloud_outlined,
-        key: Key('weatherIconFallback'),
-        size: 48,
+      return const ExcludeSemantics(
+        child: Icon(
+          Icons.cloud_outlined,
+          key: Key('weatherIconFallback'),
+          size: 48,
+        ),
       );
     }
 
@@ -27,10 +30,12 @@ class WeatherCard extends StatelessWidget {
       excludeFromSemantics: true,
       errorBuilder: (context, error, stackTrace) {
         // Show fallback cloud icon if image fails to load.
-        return const Icon(
-          Icons.cloud_outlined,
-          key: Key('weatherIconFallback'),
-          size: 48,
+        return const ExcludeSemantics(
+          child: Icon(
+            Icons.cloud_outlined,
+            key: Key('weatherIconFallback'),
+            size: 48,
+          ),
         );
       },
     );
@@ -50,9 +55,13 @@ class WeatherCard extends StatelessWidget {
     final conditionText = weather.conditionText.trim().isEmpty
         ? '—'
         : weather.conditionText;
-    final lastUpdatedText = weather.lastUpdated.trim().isEmpty
-        ? '—'
-        : weather.lastUpdated;
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final lastUpdatedText = DateFormat.yMMMd(
+      locale,
+    ).add_jm().format(weather.lastUpdated.toLocal());
+    final temperatureText = localizations.temperatureValue(
+      weather.temperatureC,
+    );
 
     return Card(
       key: const Key('weatherCard'),
@@ -62,7 +71,7 @@ class WeatherCard extends StatelessWidget {
         padding: EdgeInsets.all(20.w),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final isWide = constraints.maxWidth >= 480;
+            final isWide = constraints.maxWidth >= 700;
 
             return Column(
               mainAxisSize: MainAxisSize.min,
@@ -78,11 +87,16 @@ class WeatherCard extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              location,
-                              key: const Key('weatherLocation'),
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
+                            Semantics(
+                              label: localizations.locationSemantics(location),
+                              child: ExcludeSemantics(
+                                child: Text(
+                                  location,
+                                  key: const Key('weatherLocation'),
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ),
                             SizedBox(height: 4.h),
@@ -96,12 +110,19 @@ class WeatherCard extends StatelessWidget {
                           ],
                         ),
                       ),
-                      Text(
-                        localizations.temperatureValue(weather.temperatureC),
-                        key: const Key('weatherTemperature'),
-                        style: theme.textTheme.displayMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
+                      Semantics(
+                        label: localizations.temperatureSemantics(
+                          temperatureText,
+                        ),
+                        child: ExcludeSemantics(
+                          child: Text(
+                            temperatureText,
+                            key: const Key('weatherTemperature'),
+                            style: theme.textTheme.displayMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -113,11 +134,16 @@ class WeatherCard extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
-                            child: Text(
-                              location,
-                              key: const Key('weatherLocation'),
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
+                            child: Semantics(
+                              label: localizations.locationSemantics(location),
+                              child: ExcludeSemantics(
+                                child: Text(
+                                  location,
+                                  key: const Key('weatherLocation'),
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -125,28 +151,31 @@ class WeatherCard extends StatelessWidget {
                         ],
                       ),
                       SizedBox(height: 8.h),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Flexible(
-                            child: Text(
-                              conditionText,
-                              key: const Key('weatherCondition'),
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
+                          Text(
+                            conditionText,
+                            key: const Key('weatherCondition'),
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
-                          Text(
-                            localizations.temperatureValue(
-                              weather.temperatureC,
+                          SizedBox(height: 8.h),
+                          Semantics(
+                            label: localizations.temperatureSemantics(
+                              temperatureText,
                             ),
-                            key: const Key('weatherTemperature'),
-                            style: theme.textTheme.displaySmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary,
+                            child: ExcludeSemantics(
+                              child: Text(
+                                temperatureText,
+                                key: const Key('weatherTemperature'),
+                                style: theme.textTheme.displaySmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.primary,
+                                ),
+                                textAlign: TextAlign.end,
+                              ),
                             ),
                           ),
                         ],
@@ -166,29 +195,43 @@ class WeatherCard extends StatelessWidget {
                       icon: Icons.thermostat_outlined,
                       label: localizations.feelsLikeLabel,
                       value: localizations.temperatureValue(weather.feelsLikeC),
+                      semanticsLabel: localizations.feelsLikeSemantics(
+                        localizations.temperatureValue(weather.feelsLikeC),
+                      ),
                     ),
                     _WeatherMetric(
                       key: const Key('weatherHumidity'),
                       icon: Icons.water_drop_outlined,
                       label: localizations.humidityLabel,
                       value: localizations.humidityValue(weather.humidity),
+                      semanticsLabel: localizations.humiditySemantics(
+                        weather.humidity,
+                      ),
                     ),
                     _WeatherMetric(
                       key: const Key('weatherWindSpeed'),
                       icon: Icons.air,
                       label: localizations.windSpeedLabel,
                       value: localizations.windSpeedValue(weather.windKph),
+                      semanticsLabel: localizations.windSemantics(
+                        localizations.windSpeedValue(weather.windKph),
+                      ),
                     ),
                   ],
                 ),
                 SizedBox(height: 16.h),
-                Text(
-                  '${localizations.lastUpdatedLabel}: $lastUpdatedText',
-                  key: const Key('weatherLastUpdated'),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                Semantics(
+                  label: localizations.lastUpdatedSemantics(lastUpdatedText),
+                  child: ExcludeSemantics(
+                    child: Text(
+                      '${localizations.lastUpdatedLabel}: $lastUpdatedText',
+                      key: const Key('weatherLastUpdated'),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                  textAlign: TextAlign.center,
                 ),
               ],
             );
@@ -204,41 +247,45 @@ class _WeatherMetric extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    required this.semanticsLabel,
     super.key,
   });
 
   final IconData icon;
   final String label;
   final String value;
+  final String semanticsLabel;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 20.w, color: theme.colorScheme.secondary),
-        SizedBox(width: 6.w),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Semantics(
+      label: semanticsLabel,
+      child: ExcludeSemantics(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            Icon(icon, size: 20.w, color: theme.colorScheme.secondary),
+            SizedBox(height: 4.h),
             Text(
               label,
+              textAlign: TextAlign.center,
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
             Text(
               value,
+              textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
           ],
         ),
-      ],
+      ),
     );
   }
 }

@@ -30,7 +30,6 @@ void main() {
     Widget buildTestWidget({
       required WeatherBloc bloc,
       Locale locale = const Locale('en'),
-      ValueChanged<String>? onSearchSubmitted,
     }) {
       return BlocProvider<WeatherBloc>.value(
         value: bloc,
@@ -40,9 +39,7 @@ void main() {
             locale: locale,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            home: Scaffold(
-              body: CitySearchForm(onSearchSubmitted: onSearchSubmitted),
-            ),
+            home: Scaffold(body: const CitySearchForm()),
           ),
         ),
       );
@@ -102,10 +99,60 @@ void main() {
           '   ',
         );
         await tester.tap(find.byKey(const Key('citySearchButton')));
+        await tester.pump();
 
         verifyNever(() => bloc.add(any()));
+        expect(find.text('Enter a city name.'), findsOneWidget);
       },
     );
+
+    testWidgets('clears validation after entering a valid city', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildTestWidget(bloc: bloc));
+      await tester.tap(find.byKey(const Key('citySearchButton')));
+      await tester.pump();
+      expect(find.text('Enter a city name.'), findsOneWidget);
+
+      await tester.enterText(
+        find.byKey(const Key('citySearchTextField')),
+        'Cairo',
+      );
+      await tester.pump();
+
+      expect(find.text('Enter a city name.'), findsNothing);
+    });
+
+    testWidgets('shows Arabic validation and dispatches Arabic request', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildTestWidget(bloc: bloc, locale: const Locale('ar')),
+      );
+      await tester.tap(find.byKey(const Key('citySearchButton')));
+      await tester.pump();
+      expect(find.text('أدخل اسم المدينة.'), findsOneWidget);
+
+      await tester.enterText(
+        find.byKey(const Key('citySearchTextField')),
+        'القاهرة',
+      );
+      await tester.tap(find.byKey(const Key('citySearchButton')));
+
+      verify(
+        () => bloc.add(const WeatherRequested('القاهرة', languageCode: 'ar')),
+      ).called(1);
+    });
+
+    testWidgets('search button has at least a 48px touch target', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildTestWidget(bloc: bloc));
+      final size = tester.getSize(find.byKey(const Key('citySearchButton')));
+
+      expect(size.width, greaterThanOrEqualTo(48));
+      expect(size.height, greaterThanOrEqualTo(48));
+    });
 
     testWidgets(
       'dispatches WeatherRequested on keyboard search action (Enter)',
@@ -123,57 +170,6 @@ void main() {
       },
     );
 
-    testWidgets('invokes onSearchSubmitted callback with trimmed city name', (
-      tester,
-    ) async {
-      String? submittedCity;
-
-      await tester.pumpWidget(
-        buildTestWidget(
-          bloc: bloc,
-          onSearchSubmitted: (city) {
-            submittedCity = city;
-          },
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.enterText(
-        find.byKey(const Key('citySearchTextField')),
-        '  Cairo  ',
-      );
-      await tester.tap(find.byKey(const Key('citySearchButton')));
-
-      expect(submittedCity, equals('Cairo'));
-      verify(() => bloc.add(const WeatherRequested('Cairo'))).called(1);
-    });
-
-    testWidgets(
-      'does not invoke onSearchSubmitted callback when city is empty',
-      (tester) async {
-        String? submittedCity;
-
-        await tester.pumpWidget(
-          buildTestWidget(
-            bloc: bloc,
-            onSearchSubmitted: (city) {
-              submittedCity = city;
-            },
-          ),
-        );
-        await tester.pumpAndSettle();
-
-        await tester.enterText(
-          find.byKey(const Key('citySearchTextField')),
-          '   ',
-        );
-        await tester.tap(find.byKey(const Key('citySearchButton')));
-
-        expect(submittedCity, isNull);
-        verifyNever(() => bloc.add(any()));
-      },
-    );
-
     testWidgets('disables text field and button when state is WeatherLoading', (
       tester,
     ) async {
@@ -182,7 +178,7 @@ void main() {
       await tester.pumpWidget(buildTestWidget(bloc: bloc));
       await tester.pumpAndSettle();
 
-      final textField = tester.widget<TextField>(
+      final textField = tester.widget<TextFormField>(
         find.byKey(const Key('citySearchTextField')),
       );
       final button = tester.widget<FilledButton>(

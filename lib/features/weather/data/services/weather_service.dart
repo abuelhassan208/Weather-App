@@ -14,7 +14,10 @@ class WeatherService {
   final DioClient dioClient;
   final String _apiKey;
 
-  Future<WeatherModel> fetchCurrentWeather(String city) async {
+  Future<WeatherModel> fetchCurrentWeather(
+    String city, {
+    String languageCode = 'en',
+  }) async {
     final normalizedCity = city.trim();
 
     if (normalizedCity.isEmpty) {
@@ -26,20 +29,32 @@ class WeatherService {
     }
 
     try {
-      final response = await dioClient.dio.get<Map<String, dynamic>>(
+      final response = await dioClient.dio.get<Object?>(
         ApiConstants.currentWeatherEndpoint,
-        queryParameters: {'key': _apiKey, 'q': normalizedCity},
+        queryParameters: {
+          'key': _apiKey,
+          'q': normalizedCity,
+          if (languageCode == 'ar') 'lang': 'ar',
+        },
       );
 
       final data = response.data;
 
-      if (data == null) {
-        throw const UnknownException(
-          'The weather service returned an empty response.',
+      if (data is! Map) {
+        throw const DataParsingException(
+          'Invalid weather API payload: response root must be an object.',
         );
       }
 
-      return WeatherModel.fromApiJson(data);
+      try {
+        return WeatherModel.fromApiJson(Map<String, dynamic>.from(data));
+      } on DataParsingException {
+        rethrow;
+      } catch (_) {
+        throw const DataParsingException(
+          'Invalid weather API payload: response keys must be strings.',
+        );
+      }
     } on DioException catch (exception) {
       throw dioClient.mapDioException(exception);
     }

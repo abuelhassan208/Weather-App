@@ -19,6 +19,7 @@ class MockWeatherBloc extends Mock implements WeatherBloc {}
 void main() {
   setUpAll(() {
     registerFallbackValue(const WeatherRequested(''));
+    registerFallbackValue(const WeatherRetryRequested());
   });
 
   group('WeatherPage', () {
@@ -27,7 +28,7 @@ void main() {
     late SharedPreferences preferences;
     late LocaleCubit localeCubit;
 
-    const testWeather = WeatherModel(
+    final testWeather = WeatherModel(
       cityName: 'Cairo',
       country: 'Egypt',
       temperatureC: 30.0,
@@ -36,7 +37,7 @@ void main() {
       iconUrl: '',
       humidity: 40,
       windKph: 10.0,
-      lastUpdated: '2026-07-22 18:00',
+      lastUpdated: DateTime.utc(2026, 7, 22, 18),
     );
 
     setUp(() async {
@@ -134,7 +135,7 @@ void main() {
           findsOneWidget,
         );
 
-        final textField = tester.widget<TextField>(
+        final textField = tester.widget<TextFormField>(
           find.byKey(const Key('citySearchTextField')),
         );
         final button = tester.widget<FilledButton>(
@@ -149,9 +150,9 @@ void main() {
     testWidgets(
       'renders weather card without notice on WeatherSuccess (isFromCache: false)',
       (tester) async {
-        when(() => bloc.state).thenReturn(
-          const WeatherSuccess(weather: testWeather, isFromCache: false),
-        );
+        when(
+          () => bloc.state,
+        ).thenReturn(WeatherSuccess(weather: testWeather, isFromCache: false));
 
         await pumpWeatherPage(tester, bloc: bloc);
 
@@ -166,7 +167,11 @@ void main() {
       'renders cached notice and weather card on WeatherSuccess (isFromCache: true)',
       (tester) async {
         when(() => bloc.state).thenReturn(
-          const WeatherSuccess(weather: testWeather, isFromCache: true),
+          WeatherSuccess(
+            weather: testWeather,
+            isFromCache: true,
+            cachedAt: DateTime.utc(2026, 7, 23, 10),
+          ),
         );
 
         await pumpWeatherPage(tester, bloc: bloc);
@@ -209,37 +214,21 @@ void main() {
       verify(() => bloc.add(const WeatherRequested('Cairo'))).called(1);
     });
 
-    testWidgets(
-      'retrying error view re-dispatches WeatherRequested with last trimmed city',
-      (tester) async {
-        await pumpWeatherPage(tester, bloc: bloc);
+    testWidgets('retrying error view dispatches WeatherRetryRequested', (
+      tester,
+    ) async {
+      when(
+        () => bloc.state,
+      ).thenReturn(const WeatherFailure(type: WeatherFailureType.timeout));
 
-        // Search for city with whitespace.
-        await tester.enterText(
-          find.byKey(const Key('citySearchTextField')),
-          '  Cairo  ',
-        );
-        await tester.tap(find.byKey(const Key('citySearchButton')));
+      await pumpWeatherPage(tester, bloc: bloc);
+      await tester.tap(find.byKey(const Key('weatherRetryButton')));
 
-        // State moves to WeatherFailure.
-        when(
-          () => bloc.state,
-        ).thenReturn(const WeatherFailure(type: WeatherFailureType.timeout));
-        stateController.add(
-          const WeatherFailure(type: WeatherFailureType.timeout),
-        );
-        await tester.pump();
-
-        // Tap retry button.
-        await tester.tap(find.byKey(const Key('weatherRetryButton')));
-
-        // Verify WeatherRequested('Cairo') was dispatched twice total (search + retry).
-        verify(() => bloc.add(const WeatherRequested('Cairo'))).called(2);
-      },
-    );
+      verify(() => bloc.add(const WeatherRetryRequested())).called(1);
+    });
 
     testWidgets(
-      'tapping retry without prior search does not crash or dispatch event',
+      'tapping retry delegates safely to WeatherBloc without prior search',
       (tester) async {
         when(
           () => bloc.state,
@@ -250,10 +239,19 @@ void main() {
         await tester.tap(find.byKey(const Key('weatherRetryButton')));
         await tester.pump();
 
-        verifyNever(() => bloc.add(any()));
+        verify(() => bloc.add(const WeatherRetryRequested())).called(1);
         expect(tester.takeException(), isNull);
       },
     );
+
+    testWidgets('WeatherPage is a StatelessWidget', (tester) async {
+      await pumpWeatherPage(tester, bloc: bloc);
+
+      expect(
+        tester.widget<WeatherPage>(find.byType(WeatherPage)),
+        isA<StatelessWidget>(),
+      );
+    });
 
     testWidgets('displays Arabic localized texts when locale is Arabic', (
       tester,
@@ -273,7 +271,11 @@ void main() {
       tester,
     ) async {
       when(() => bloc.state).thenReturn(
-        const WeatherSuccess(weather: testWeather, isFromCache: true),
+        WeatherSuccess(
+          weather: testWeather,
+          isFromCache: true,
+          cachedAt: DateTime.utc(2026, 7, 23, 10),
+        ),
       );
 
       await pumpWeatherPage(
@@ -288,9 +290,9 @@ void main() {
     testWidgets('renders without overflow on wide surface size', (
       tester,
     ) async {
-      when(() => bloc.state).thenReturn(
-        const WeatherSuccess(weather: testWeather, isFromCache: false),
-      );
+      when(
+        () => bloc.state,
+      ).thenReturn(WeatherSuccess(weather: testWeather, isFromCache: false));
 
       await pumpWeatherPage(
         tester,
@@ -327,9 +329,9 @@ void main() {
     testWidgets('changing language preserves WeatherSuccess state and card', (
       tester,
     ) async {
-      when(() => bloc.state).thenReturn(
-        const WeatherSuccess(weather: testWeather, isFromCache: false),
-      );
+      when(
+        () => bloc.state,
+      ).thenReturn(WeatherSuccess(weather: testWeather, isFromCache: false));
 
       await pumpWeatherPage(tester, bloc: bloc);
 

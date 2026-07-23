@@ -8,15 +8,14 @@ import '../../logic/bloc/weather_event.dart';
 import '../../logic/bloc/weather_state.dart';
 
 class CitySearchForm extends StatefulWidget {
-  const CitySearchForm({this.onSearchSubmitted, super.key});
-
-  final ValueChanged<String>? onSearchSubmitted;
+  const CitySearchForm({super.key});
 
   @override
   State<CitySearchForm> createState() => _CitySearchFormState();
 }
 
 class _CitySearchFormState extends State<CitySearchForm> {
+  final _formKey = GlobalKey<FormState>();
   late final TextEditingController _cityController;
   late final FocusNode _cityFocusNode;
 
@@ -28,17 +27,20 @@ class _CitySearchFormState extends State<CitySearchForm> {
   }
 
   void _submitSearch() {
-    final city = _cityController.text.trim();
-
-    if (city.isEmpty) {
+    if (!_formKey.currentState!.validate()) {
+      _cityFocusNode.requestFocus();
       return;
     }
+    final city = _cityController.text.trim();
 
     FocusManager.instance.primaryFocus?.unfocus();
 
-    widget.onSearchSubmitted?.call(city);
-
-    context.read<WeatherBloc>().add(WeatherRequested(city));
+    context.read<WeatherBloc>().add(
+      WeatherRequested(
+        city,
+        languageCode: Localizations.localeOf(context).languageCode,
+      ),
+    );
   }
 
   @override
@@ -59,11 +61,12 @@ class _CitySearchFormState extends State<CitySearchForm> {
       builder: (context, state) {
         final isLoading = state is WeatherLoading;
 
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: TextField(
+        return Form(
+          key: _formKey,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final stackControls = constraints.maxWidth < 420;
+              final field = TextFormField(
                 key: const Key('citySearchTextField'),
                 controller: _cityController,
                 focusNode: _cityFocusNode,
@@ -76,23 +79,43 @@ class _CitySearchFormState extends State<CitySearchForm> {
                   hintText: localizations.cityInputHint,
                   border: const OutlineInputBorder(),
                 ),
-                onSubmitted: (_) {
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? localizations.emptyCityValidation
+                    : null,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                onFieldSubmitted: (_) {
                   if (!isLoading) {
                     _submitSearch();
                   }
                 },
-              ),
-            ),
-            SizedBox(width: 12.w),
-            SizedBox(
-              height: 56.h,
-              child: FilledButton(
+              );
+              final button = FilledButton(
                 key: const Key('citySearchButton'),
+                style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
                 onPressed: isLoading ? null : _submitSearch,
                 child: Text(localizations.searchButton),
-              ),
-            ),
-          ],
+              );
+
+              if (stackControls) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    field,
+                    SizedBox(height: 12.h),
+                    button,
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: field),
+                  SizedBox(width: 12.w),
+                  button,
+                ],
+              );
+            },
+          ),
         );
       },
     );

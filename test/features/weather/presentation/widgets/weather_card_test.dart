@@ -7,7 +7,7 @@ import 'package:weather_app/l10n/generated/app_localizations.dart';
 
 void main() {
   group('WeatherCard', () {
-    const weather = WeatherModel(
+    final weather = WeatherModel(
       cityName: 'Cairo',
       country: 'Egypt',
       temperatureC: 30.0,
@@ -16,7 +16,7 @@ void main() {
       iconUrl: '',
       humidity: 40,
       windKph: 10.0,
-      lastUpdated: '2026-07-22 18:00',
+      lastUpdated: DateTime.utc(2026, 7, 22, 18),
     );
 
     Future<void> pumpWeatherCard(
@@ -24,6 +24,7 @@ void main() {
       required WeatherModel weather,
       Locale locale = const Locale('en'),
       Size surfaceSize = const Size(375, 812),
+      double textScale = 1,
     }) async {
       tester.view.physicalSize = surfaceSize;
       tester.view.devicePixelRatio = 1.0;
@@ -40,11 +41,19 @@ void main() {
               locale: locale,
               localizationsDelegates: AppLocalizations.localizationsDelegates,
               supportedLocales: AppLocalizations.supportedLocales,
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: TextScaler.linear(textScale)),
+                child: child!,
+              ),
               home: Scaffold(
-                body: Center(
-                  child: SizedBox(
-                    width: surfaceSize.width,
-                    child: WeatherCard(weather: weather),
+                body: SingleChildScrollView(
+                  child: Center(
+                    child: SizedBox(
+                      width: surfaceSize.width,
+                      child: WeatherCard(weather: weather),
+                    ),
                   ),
                 ),
               ),
@@ -102,6 +111,70 @@ void main() {
       expect(find.byKey(const Key('weatherWindSpeed')), findsOneWidget);
     });
 
+    for (final testCase in <({Size size, double scale, Locale locale})>[
+      (size: Size(320, 640), scale: 2, locale: Locale('en')),
+      (size: Size(640, 320), scale: 2, locale: Locale('en')),
+      (size: Size(812, 375), scale: 1.5, locale: Locale('ar')),
+      (size: Size(600, 900), scale: 2, locale: Locale('ar')),
+      (size: Size(900, 600), scale: 1.5, locale: Locale('en')),
+      (size: Size(900, 900), scale: 2, locale: Locale('en')),
+    ]) {
+      testWidgets(
+        'renders long content at ${testCase.size} scale ${testCase.scale} ${testCase.locale.languageCode}',
+        (tester) async {
+          final longWeather = WeatherModel(
+            cityName: 'San Fernando del Valle de Catamarca',
+            country: 'Argentina',
+            temperatureC: 30,
+            feelsLikeC: 32,
+            conditionText: testCase.locale.languageCode == 'ar'
+                ? 'عواصف رعدية مصحوبة بأمطار غزيرة ورياح شديدة'
+                : 'Thunderstorms with heavy rain and strong winds',
+            iconUrl: '',
+            humidity: 80,
+            windKph: 45,
+            lastUpdated: DateTime.utc(2026, 7, 23, 10, 30),
+          );
+
+          await pumpWeatherCard(
+            tester,
+            weather: longWeather,
+            locale: testCase.locale,
+            surfaceSize: testCase.size,
+            textScale: testCase.scale,
+          );
+
+          expect(tester.takeException(), isNull);
+          expect(find.byKey(const Key('weatherCard')), findsOneWidget);
+        },
+      );
+    }
+
+    testWidgets('groups weather metrics into accessible semantic labels', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await pumpWeatherCard(tester, weather: weather);
+
+      expect(
+        tester.getSemantics(find.byKey(const Key('weatherLocation'))).label,
+        contains('Location'),
+      );
+      final cardSemantics = tester
+          .getSemantics(find.byKey(const Key('weatherHumidity')))
+          .label;
+      expect(cardSemantics, contains('Humidity, 40 percent'));
+      expect(
+        tester.getSemantics(find.byKey(const Key('weatherWindSpeed'))).label,
+        contains('Wind speed'),
+      );
+      expect(
+        tester.getSemantics(find.byKey(const Key('weatherLastUpdated'))).label,
+        contains('Last updated'),
+      );
+      handle.dispose();
+    });
+
     testWidgets('displays fallback icon when iconUrl is empty', (tester) async {
       await pumpWeatherCard(tester, weather: weather);
 
@@ -112,7 +185,7 @@ void main() {
     testWidgets('displays network image when iconUrl is present', (
       tester,
     ) async {
-      const weatherWithIcon = WeatherModel(
+      final weatherWithIcon = WeatherModel(
         cityName: 'Cairo',
         country: 'Egypt',
         temperatureC: 30.0,
@@ -121,7 +194,7 @@ void main() {
         iconUrl: 'https://example.com/weather.png',
         humidity: 40,
         windKph: 10.0,
-        lastUpdated: '2026-07-22 18:00',
+        lastUpdated: DateTime.utc(2026, 7, 22, 18),
       );
 
       await pumpWeatherCard(tester, weather: weatherWithIcon);
@@ -132,7 +205,7 @@ void main() {
     testWidgets('formats location correctly when country is empty', (
       tester,
     ) async {
-      const weatherNoCountry = WeatherModel(
+      final weatherNoCountry = WeatherModel(
         cityName: 'Cairo',
         country: '',
         temperatureC: 30.0,
@@ -141,7 +214,7 @@ void main() {
         iconUrl: '',
         humidity: 40,
         windKph: 10.0,
-        lastUpdated: '2026-07-22 18:00',
+        lastUpdated: DateTime.utc(2026, 7, 22, 18),
       );
 
       await pumpWeatherCard(tester, weather: weatherNoCountry);
@@ -153,7 +226,7 @@ void main() {
     testWidgets('handles empty text data safely with fallback dash', (
       tester,
     ) async {
-      const emptyWeather = WeatherModel(
+      final emptyWeather = WeatherModel(
         cityName: '',
         country: '',
         temperatureC: 0.0,
@@ -162,7 +235,7 @@ void main() {
         iconUrl: '',
         humidity: 0,
         windKph: 0.0,
-        lastUpdated: '',
+        lastUpdated: DateTime.utc(2026, 7, 22, 18),
       );
 
       await pumpWeatherCard(tester, weather: emptyWeather);

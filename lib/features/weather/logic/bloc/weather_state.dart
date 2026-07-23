@@ -29,13 +29,18 @@ final class WeatherLoading extends WeatherState {
 }
 
 final class WeatherSuccess extends WeatherState {
-  const WeatherSuccess({required this.weather, required this.isFromCache});
+  const WeatherSuccess({
+    required this.weather,
+    required this.isFromCache,
+    this.cachedAt,
+  }) : assert(!isFromCache || cachedAt != null);
 
   final WeatherModel weather;
   final bool isFromCache;
+  final DateTime? cachedAt;
 
   @override
-  List<Object?> get props => [weather, isFromCache];
+  List<Object?> get props => [weather, isFromCache, cachedAt];
 }
 
 final class WeatherFailure extends WeatherState {

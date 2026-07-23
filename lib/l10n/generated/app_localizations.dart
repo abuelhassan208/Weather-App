@@ -134,6 +134,12 @@ abstract class AppLocalizations {
   /// **'Search'**
   String get searchButton;
 
+  /// No description provided for @emptyCityValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a city name.'**
+  String get emptyCityValidation;
+
   /// No description provided for @loadingWeather.
   ///
   /// In en, this message translates to:
@@ -145,6 +151,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Showing the last saved weather data.'**
   String get cachedWeatherNotice;
+
+  /// No description provided for @cachedJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved just now'**
+  String get cachedJustNow;
+
+  /// No description provided for @cachedOneMinuteAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved 1 minute ago'**
+  String get cachedOneMinuteAgo;
+
+  /// No description provided for @cachedMinutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved {minutes} minutes ago'**
+  String cachedMinutesAgo(String minutes);
+
+  /// No description provided for @cachedWeatherDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing saved weather for {city}. {age}. It may not be current.'**
+  String cachedWeatherDetails(String city, String age);
 
   /// No description provided for @tryAgainButton.
   ///
@@ -199,6 +229,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Last updated'**
   String get lastUpdatedLabel;
+
+  /// No description provided for @locationSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Location, {value}'**
+  String locationSemantics(String value);
+
+  /// No description provided for @temperatureSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature, {value}'**
+  String temperatureSemantics(String value);
+
+  /// No description provided for @feelsLikeSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Feels like, {value}'**
+  String feelsLikeSemantics(String value);
+
+  /// No description provided for @humiditySemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Humidity, {value} percent'**
+  String humiditySemantics(int value);
+
+  /// No description provided for @windSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Wind speed, {value}'**
+  String windSemantics(String value);
+
+  /// No description provided for @lastUpdatedSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Last updated, {value}'**
+  String lastUpdatedSemantics(String value);
 
   /// Displays a temperature value in Celsius.
   ///

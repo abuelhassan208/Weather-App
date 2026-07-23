@@ -14,27 +14,14 @@ import '../widgets/weather_error_view.dart';
 import '../widgets/weather_initial_view.dart';
 import '../widgets/weather_loading_view.dart';
 
-class WeatherPage extends StatefulWidget {
+class WeatherPage extends StatelessWidget {
   const WeatherPage({super.key});
 
-  @override
-  State<WeatherPage> createState() => _WeatherPageState();
-}
-
-class _WeatherPageState extends State<WeatherPage> {
-  String? _lastSearchedCity;
-
-  void _retryLastSearch() {
-    final city = _lastSearchedCity;
-
-    if (city == null || city.isEmpty) {
-      return;
-    }
-
-    context.read<WeatherBloc>().add(WeatherRequested(city));
+  void _retryLastSearch(BuildContext context) {
+    context.read<WeatherBloc>().add(const WeatherRetryRequested());
   }
 
-  Widget _buildWeatherState(WeatherState state) {
+  Widget _buildWeatherState(BuildContext context, WeatherState state) {
     return switch (state) {
       WeatherInitial() => const WeatherInitialView(),
       WeatherLoading() => const WeatherLoadingView(),
@@ -43,7 +30,10 @@ class _WeatherPageState extends State<WeatherPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (state.isFromCache) ...[
-            const CachedWeatherNotice(),
+            CachedWeatherNotice(
+              cityName: state.weather.cityName,
+              cachedAt: state.cachedAt!,
+            ),
             SizedBox(height: 16.h),
           ],
           WeatherCard(weather: state.weather),
@@ -51,7 +41,7 @@ class _WeatherPageState extends State<WeatherPage> {
       ),
       WeatherFailure() => WeatherErrorView(
         failureType: state.type,
-        onRetry: _retryLastSearch,
+        onRetry: () => _retryLastSearch(context),
       ),
     };
   }
@@ -85,17 +75,13 @@ class _WeatherPageState extends State<WeatherPage> {
                     ],
                   ),
                   SizedBox(height: 24.h),
-                  CitySearchForm(
-                    onSearchSubmitted: (city) {
-                      _lastSearchedCity = city;
-                    },
-                  ),
+                  const CitySearchForm(),
                   SizedBox(height: 32.h),
                   BlocBuilder<WeatherBloc, WeatherState>(
                     builder: (context, state) {
                       return KeyedSubtree(
                         key: const Key('weatherStateContent'),
-                        child: _buildWeatherState(state),
+                        child: _buildWeatherState(context, state),
                       );
                     },
                   ),

@@ -189,15 +189,19 @@ void main() {
       testWidgets('displays cached notice elements with English text', (
         tester,
       ) async {
-        await pumpLocalizedWidget(tester, child: const CachedWeatherNotice());
+        await pumpLocalizedWidget(
+          tester,
+          child: CachedWeatherNotice(
+            cityName: 'Cairo',
+            cachedAt: DateTime.utc(2026, 7, 23, 9, 55),
+            now: () => DateTime.utc(2026, 7, 23, 10),
+          ),
+        );
 
         expect(find.byKey(const Key('cachedWeatherNotice')), findsOneWidget);
         expect(find.byKey(const Key('cachedWeatherIcon')), findsOneWidget);
         expect(find.byKey(const Key('cachedWeatherMessage')), findsOneWidget);
-        expect(
-          find.text('Showing the last saved weather data.'),
-          findsOneWidget,
-        );
+        expect(find.textContaining('Saved 5 minutes ago'), findsOneWidget);
       });
 
       testWidgets('displays cached notice elements with Arabic text', (
@@ -205,11 +209,15 @@ void main() {
       ) async {
         await pumpLocalizedWidget(
           tester,
-          child: const CachedWeatherNotice(),
+          child: CachedWeatherNotice(
+            cityName: 'القاهرة',
+            cachedAt: DateTime.utc(2026, 7, 23, 9, 55),
+            now: () => DateTime.utc(2026, 7, 23, 10),
+          ),
           locale: const Locale('ar'),
         );
 
-        expect(find.text('يتم عرض آخر بيانات طقس محفوظة.'), findsOneWidget);
+        expect(find.textContaining('تم الحفظ منذ 5 دقائق'), findsOneWidget);
       });
     });
 
@@ -227,7 +235,10 @@ void main() {
                 failureType: WeatherFailureType.noInternet,
                 onRetry: () {},
               ),
-              const CachedWeatherNotice(),
+              CachedWeatherNotice(
+                cityName: 'Cairo',
+                cachedAt: DateTime.utc(2026, 7, 23, 10),
+              ),
             ],
           ),
           surfaceSize: const Size(320, 640),
@@ -249,7 +260,10 @@ void main() {
                 failureType: WeatherFailureType.server,
                 onRetry: () {},
               ),
-              const CachedWeatherNotice(),
+              CachedWeatherNotice(
+                cityName: 'Cairo',
+                cachedAt: DateTime.utc(2026, 7, 23, 10),
+              ),
             ],
           ),
           surfaceSize: const Size(900, 900),

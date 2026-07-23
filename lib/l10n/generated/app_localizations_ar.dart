@@ -27,10 +27,29 @@ class AppLocalizationsAr extends AppLocalizations {
   String get searchButton => 'بحث';
 
   @override
+  String get emptyCityValidation => 'أدخل اسم المدينة.';
+
+  @override
   String get loadingWeather => 'جارٍ تحميل بيانات الطقس...';
 
   @override
   String get cachedWeatherNotice => 'يتم عرض آخر بيانات طقس محفوظة.';
+
+  @override
+  String get cachedJustNow => 'تم الحفظ الآن';
+
+  @override
+  String get cachedOneMinuteAgo => 'تم الحفظ منذ دقيقة واحدة';
+
+  @override
+  String cachedMinutesAgo(String minutes) {
+    return 'تم الحفظ منذ $minutes دقائق';
+  }
+
+  @override
+  String cachedWeatherDetails(String city, String age) {
+    return 'يتم عرض طقس محفوظ لمدينة $city. $age. قد لا تكون البيانات لحظية.';
+  }
 
   @override
   String get tryAgainButton => 'إعادة المحاولة';
@@ -58,6 +77,36 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get lastUpdatedLabel => 'آخر تحديث';
+
+  @override
+  String locationSemantics(String value) {
+    return 'الموقع، $value';
+  }
+
+  @override
+  String temperatureSemantics(String value) {
+    return 'درجة الحرارة، $value';
+  }
+
+  @override
+  String feelsLikeSemantics(String value) {
+    return 'درجة الحرارة المحسوسة، $value';
+  }
+
+  @override
+  String humiditySemantics(int value) {
+    return 'الرطوبة، $value بالمئة';
+  }
+
+  @override
+  String windSemantics(String value) {
+    return 'سرعة الرياح، $value';
+  }
+
+  @override
+  String lastUpdatedSemantics(String value) {
+    return 'آخر تحديث، $value';
+  }
 
   @override
   String temperatureValue(num value) {

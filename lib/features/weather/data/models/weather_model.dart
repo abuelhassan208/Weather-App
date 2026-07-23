@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../../core/errors/app_exception.dart';
+
 class WeatherModel extends Equatable {
   const WeatherModel({
     required this.cityName,
@@ -21,38 +23,84 @@ class WeatherModel extends Equatable {
   final String iconUrl;
   final int humidity;
   final double windKph;
-  final String lastUpdated;
+  final DateTime lastUpdated;
 
   factory WeatherModel.fromApiJson(Map<String, dynamic> json) {
-    final location = json['location'] as Map<String, dynamic>? ?? {};
-    final current = json['current'] as Map<String, dynamic>? ?? {};
-    final condition = current['condition'] as Map<String, dynamic>? ?? {};
+    try {
+      final location = _requireMap(json, 'location', 'location');
+      final current = _requireMap(json, 'current', 'current');
+      final condition = _requireMap(current, 'condition', 'current.condition');
 
-    return WeatherModel(
-      cityName: location['name']?.toString() ?? '',
-      country: location['country']?.toString() ?? '',
-      temperatureC: (current['temp_c'] as num?)?.toDouble() ?? 0,
-      feelsLikeC: (current['feelslike_c'] as num?)?.toDouble() ?? 0,
-      conditionText: condition['text']?.toString() ?? '',
-      iconUrl: _normalizeIconUrl(condition['icon']?.toString() ?? ''),
-      humidity: (current['humidity'] as num?)?.toInt() ?? 0,
-      windKph: (current['wind_kph'] as num?)?.toDouble() ?? 0,
-      lastUpdated: current['last_updated']?.toString() ?? '',
-    );
+      return WeatherModel(
+        cityName: _requireString(location, 'name', 'location.name'),
+        country: _optionalString(location, 'country', 'location.country'),
+        temperatureC: _requireFiniteDouble(current, 'temp_c', 'current.temp_c'),
+        feelsLikeC: _requireFiniteDouble(
+          current,
+          'feelslike_c',
+          'current.feelslike_c',
+        ),
+        conditionText: _requireString(
+          condition,
+          'text',
+          'current.condition.text',
+        ),
+        iconUrl: _normalizeIconUrl(
+          _optionalString(condition, 'icon', 'current.condition.icon'),
+        ),
+        humidity: _requireHumidity(current, 'humidity', 'current.humidity'),
+        windKph: _requireNonNegativeDouble(
+          current,
+          'wind_kph',
+          'current.wind_kph',
+        ),
+        lastUpdated: _requireEpochDateTime(
+          current,
+          'last_updated_epoch',
+          'current.last_updated_epoch',
+        ),
+      );
+    } on DataParsingException {
+      rethrow;
+    } catch (_) {
+      throw const DataParsingException('Invalid weather API payload.');
+    }
   }
 
   factory WeatherModel.fromCacheJson(Map<String, dynamic> json) {
-    return WeatherModel(
-      cityName: json['cityName']?.toString() ?? '',
-      country: json['country']?.toString() ?? '',
-      temperatureC: (json['temperatureC'] as num?)?.toDouble() ?? 0,
-      feelsLikeC: (json['feelsLikeC'] as num?)?.toDouble() ?? 0,
-      conditionText: json['conditionText']?.toString() ?? '',
-      iconUrl: json['iconUrl']?.toString() ?? '',
-      humidity: (json['humidity'] as num?)?.toInt() ?? 0,
-      windKph: (json['windKph'] as num?)?.toDouble() ?? 0,
-      lastUpdated: json['lastUpdated']?.toString() ?? '',
-    );
+    try {
+      return WeatherModel(
+        cityName: _requireString(json, 'cityName', 'weather.cityName'),
+        country: _optionalString(json, 'country', 'weather.country'),
+        temperatureC: _requireFiniteDouble(
+          json,
+          'temperatureC',
+          'weather.temperatureC',
+        ),
+        feelsLikeC: _requireFiniteDouble(
+          json,
+          'feelsLikeC',
+          'weather.feelsLikeC',
+        ),
+        conditionText: _requireString(
+          json,
+          'conditionText',
+          'weather.conditionText',
+        ),
+        iconUrl: _optionalString(json, 'iconUrl', 'weather.iconUrl'),
+        humidity: _requireHumidity(json, 'humidity', 'weather.humidity'),
+        windKph: _requireNonNegativeDouble(json, 'windKph', 'weather.windKph'),
+        lastUpdated: _requireDateTime(
+          json,
+          'lastUpdated',
+          'weather.lastUpdated',
+        ),
+      );
+    } on DataParsingException {
+      rethrow;
+    } catch (_) {
+      throw const DataParsingException('Invalid cached weather payload.');
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -65,7 +113,7 @@ class WeatherModel extends Equatable {
       'iconUrl': iconUrl,
       'humidity': humidity,
       'windKph': windKph,
-      'lastUpdated': lastUpdated,
+      'lastUpdated': lastUpdated.toUtc().toIso8601String(),
     };
   }
 
@@ -76,6 +124,146 @@ class WeatherModel extends Equatable {
     }
 
     return iconUrl;
+  }
+
+  static Map<String, dynamic> _requireMap(
+    Map<String, dynamic> source,
+    String key,
+    String path,
+  ) {
+    final value = source[key];
+    if (value is! Map) {
+      throw DataParsingException(
+        'Invalid weather payload: $path must be an object.',
+      );
+    }
+
+    try {
+      return Map<String, dynamic>.from(value);
+    } catch (_) {
+      throw DataParsingException(
+        'Invalid weather payload: $path must use string keys.',
+      );
+    }
+  }
+
+  static String _requireString(
+    Map<String, dynamic> source,
+    String key,
+    String path,
+  ) {
+    final value = source[key];
+    if (value is! String || value.trim().isEmpty) {
+      throw DataParsingException(
+        'Invalid weather payload: $path must be a non-empty string.',
+      );
+    }
+
+    return value.trim();
+  }
+
+  static String _optionalString(
+    Map<String, dynamic> source,
+    String key,
+    String path,
+  ) {
+    final value = source[key];
+    if (value == null) {
+      return '';
+    }
+    if (value is! String) {
+      throw DataParsingException(
+        'Invalid weather payload: $path must be a string when present.',
+      );
+    }
+
+    return value.trim();
+  }
+
+  static double _requireFiniteDouble(
+    Map<String, dynamic> source,
+    String key,
+    String path,
+  ) {
+    final value = source[key];
+    if (value is! num || !value.isFinite) {
+      throw DataParsingException(
+        'Invalid weather payload: $path must be a finite number.',
+      );
+    }
+
+    return value.toDouble();
+  }
+
+  static double _requireNonNegativeDouble(
+    Map<String, dynamic> source,
+    String key,
+    String path,
+  ) {
+    final value = _requireFiniteDouble(source, key, path);
+    if (value < 0) {
+      throw DataParsingException(
+        'Invalid weather payload: $path must not be negative.',
+      );
+    }
+
+    return value;
+  }
+
+  static int _requireHumidity(
+    Map<String, dynamic> source,
+    String key,
+    String path,
+  ) {
+    final value = source[key];
+    if (value is! num ||
+        !value.isFinite ||
+        value != value.truncateToDouble() ||
+        value < 0 ||
+        value > 100) {
+      throw DataParsingException(
+        'Invalid weather payload: $path must be an integer from 0 to 100.',
+      );
+    }
+
+    return value.toInt();
+  }
+
+  static DateTime _requireEpochDateTime(
+    Map<String, dynamic> source,
+    String key,
+    String path,
+  ) {
+    final value = source[key];
+    if (value is! num || !value.isFinite || value != value.truncateToDouble()) {
+      throw DataParsingException(
+        'Invalid weather payload: $path must be an integer epoch.',
+      );
+    }
+    return DateTime.fromMillisecondsSinceEpoch(
+      value.toInt() * Duration.millisecondsPerSecond,
+      isUtc: true,
+    );
+  }
+
+  static DateTime _requireDateTime(
+    Map<String, dynamic> source,
+    String key,
+    String path,
+  ) {
+    final value = source[key];
+    if (value is! String) {
+      throw DataParsingException(
+        'Invalid weather payload: $path must be an ISO-8601 string.',
+      );
+    }
+    final parsed = DateTime.tryParse(value);
+    if (parsed == null) {
+      throw DataParsingException(
+        'Invalid weather payload: $path must be an ISO-8601 string.',
+      );
+    }
+    return parsed.toUtc();
   }
 
   @override

@@ -45,6 +45,12 @@ final class CacheException extends AppException {
   ]);
 }
 
+final class DataParsingException extends AppException {
+  const DataParsingException([
+    super.message = 'The weather data has an invalid format.',
+  ]);
+}
+
 final class UnknownException extends AppException {
   const UnknownException([super.message = 'Something went wrong.']);
 }

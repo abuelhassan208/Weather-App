@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:weather_app/core/errors/app_exception.dart';
@@ -22,7 +24,10 @@ class FakeWeatherService extends WeatherService {
   String? receivedCity;
 
   @override
-  Future<WeatherModel> fetchCurrentWeather(String city) async {
+  Future<WeatherModel> fetchCurrentWeather(
+    String city, {
+    String languageCode = 'en',
+  }) async {
     callCount++;
     receivedCity = city;
 
@@ -38,14 +43,18 @@ class FailingSaveCacheService extends WeatherCacheService {
   FailingSaveCacheService({required super.preferences});
 
   @override
-  Future<void> saveWeather(WeatherModel weather) async {
+  Future<void> saveWeather(
+    String requestedCity,
+    WeatherModel weather, {
+    String languageCode = 'en',
+  }) async {
     throw const CacheException('Failed to save weather data.');
   }
 }
 
 void main() {
   group('WeatherRepository', () {
-    const remoteWeather = WeatherModel(
+    final remoteWeather = WeatherModel(
       cityName: 'Cairo',
       country: 'Egypt',
       temperatureC: 30.0,
@@ -54,10 +63,10 @@ void main() {
       iconUrl: 'https://cdn.weatherapi.com/weather/64x64/day/113.png',
       humidity: 40,
       windKph: 10.0,
-      lastUpdated: '2026-07-22 18:00',
+      lastUpdated: DateTime.utc(2026, 7, 22, 18),
     );
 
-    const cachedWeather = WeatherModel(
+    final cachedWeather = WeatherModel(
       cityName: 'Alexandria',
       country: 'Egypt',
       temperatureC: 27.0,
@@ -66,17 +75,22 @@ void main() {
       iconUrl: 'https://cdn.weatherapi.com/weather/64x64/day/116.png',
       humidity: 60,
       windKph: 15.0,
-      lastUpdated: '2026-07-22 17:00',
+      lastUpdated: DateTime.utc(2026, 7, 22, 17),
     );
 
     late SharedPreferences preferences;
     late WeatherCacheService cacheService;
     late DioClient dioClient;
+    late DateTime currentTime;
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
       preferences = await SharedPreferences.getInstance();
-      cacheService = WeatherCacheService(preferences: preferences);
+      currentTime = DateTime.utc(2026, 7, 23, 10);
+      cacheService = WeatherCacheService(
+        preferences: preferences,
+        now: () => currentTime,
+      );
       dioClient = DioClient();
     });
 
@@ -100,18 +114,18 @@ void main() {
 
         expect(
           result,
-          const WeatherResult(weather: remoteWeather, isFromCache: false),
+          WeatherResult(weather: remoteWeather, isFromCache: false),
         );
         expect(fakeService.callCount, 1);
         expect(fakeService.receivedCity, 'Cairo');
-        expect(cacheService.getCachedWeather(), remoteWeather);
+        expect(await cacheService.getCachedWeather('Cairo'), remoteWeather);
       },
     );
 
     test(
       'returns cached weather data when internet is unavailable and cache exists',
       () async {
-        await cacheService.saveWeather(cachedWeather);
+        await cacheService.saveWeather('Cairo', cachedWeather);
         final fakeService = FakeWeatherService(dioClient: dioClient);
         final connectionService = InternetConnectionService(
           internetCheck: () async => false,
@@ -126,7 +140,11 @@ void main() {
 
         expect(
           result,
-          const WeatherResult(weather: cachedWeather, isFromCache: true),
+          WeatherResult(
+            weather: cachedWeather,
+            isFromCache: true,
+            cachedAt: currentTime,
+          ),
         );
         expect(fakeService.callCount, 0);
       },
@@ -156,7 +174,7 @@ void main() {
     test(
       'returns cached weather data when network fails with NetworkException and cache exists',
       () async {
-        await cacheService.saveWeather(cachedWeather);
+        await cacheService.saveWeather('Cairo', cachedWeather);
         final fakeService = FakeWeatherService(
           dioClient: dioClient,
           error: const NetworkException(),
@@ -174,7 +192,11 @@ void main() {
 
         expect(
           result,
-          const WeatherResult(weather: cachedWeather, isFromCache: true),
+          WeatherResult(
+            weather: cachedWeather,
+            isFromCache: true,
+            cachedAt: currentTime,
+          ),
         );
       },
     );
@@ -182,7 +204,7 @@ void main() {
     test(
       'returns cached weather data when request times out and cache exists',
       () async {
-        await cacheService.saveWeather(cachedWeather);
+        await cacheService.saveWeather('Cairo', cachedWeather);
         final fakeService = FakeWeatherService(
           dioClient: dioClient,
           error: const TimeoutException(),
@@ -200,7 +222,11 @@ void main() {
 
         expect(
           result,
-          const WeatherResult(weather: cachedWeather, isFromCache: true),
+          WeatherResult(
+            weather: cachedWeather,
+            isFromCache: true,
+            cachedAt: currentTime,
+          ),
         );
       },
     );
@@ -231,7 +257,7 @@ void main() {
     test(
       'rethrows BadRequestException on invalid city and does not fallback to cache',
       () async {
-        await cacheService.saveWeather(cachedWeather);
+        await cacheService.saveWeather('Cairo', cachedWeather);
         final fakeService = FakeWeatherService(
           dioClient: dioClient,
           error: const BadRequestException(),
@@ -275,13 +301,13 @@ void main() {
 
         expect(
           result,
-          const WeatherResult(weather: remoteWeather, isFromCache: false),
+          WeatherResult(weather: remoteWeather, isFromCache: false),
         );
       },
     );
 
     test('rethrows CacheException when cached data is corrupted', () async {
-      await preferences.setString('cached_weather', 'invalid-json');
+      await preferences.setString('cached_weather_cairo_en', 'invalid-json');
       final fakeService = FakeWeatherService(dioClient: dioClient);
       final connectionService = InternetConnectionService(
         internetCheck: () async => false,
@@ -297,5 +323,271 @@ void main() {
         throwsA(isA<CacheException>()),
       );
     });
+
+    test('does not return Cairo cache for offline London request', () async {
+      await cacheService.saveWeather('Cairo', cachedWeather);
+      final fakeService = FakeWeatherService(dioClient: dioClient);
+      final repository = WeatherRepository(
+        weatherService: fakeService,
+        cacheService: cacheService,
+        connectionService: InternetConnectionService(
+          internetCheck: () async => false,
+        ),
+      );
+
+      expectLater(
+        () => repository.getCurrentWeather('London'),
+        throwsA(isA<NetworkException>()),
+      );
+      expect(fakeService.callCount, 0);
+    });
+
+    test(
+      'uses Cairo cache for normalized city variants while offline',
+      () async {
+        await cacheService.saveWeather('Cairo', cachedWeather);
+        final fakeService = FakeWeatherService(dioClient: dioClient);
+        final repository = WeatherRepository(
+          weatherService: fakeService,
+          cacheService: cacheService,
+          connectionService: InternetConnectionService(
+            internetCheck: () async => false,
+          ),
+        );
+
+        for (final city in ['Cairo', 'cairo', 'CAIRO', '  Cairo  ']) {
+          final result = await repository.getCurrentWeather(city);
+
+          expect(
+            result,
+            WeatherResult(
+              weather: cachedWeather,
+              isFromCache: true,
+              cachedAt: currentTime,
+            ),
+          );
+        }
+        expect(fakeService.callCount, 0);
+      },
+    );
+
+    test(
+      'does not return Cairo cache when London network request fails',
+      () async {
+        await cacheService.saveWeather('Cairo', cachedWeather);
+        final fakeService = FakeWeatherService(
+          dioClient: dioClient,
+          error: const NetworkException(),
+        );
+        final repository = WeatherRepository(
+          weatherService: fakeService,
+          cacheService: cacheService,
+          connectionService: InternetConnectionService(
+            internetCheck: () async => true,
+          ),
+        );
+
+        expectLater(
+          () => repository.getCurrentWeather('London'),
+          throwsA(isA<NetworkException>()),
+        );
+      },
+    );
+
+    test('does not return Cairo cache when London request times out', () async {
+      await cacheService.saveWeather('Cairo', cachedWeather);
+      final fakeService = FakeWeatherService(
+        dioClient: dioClient,
+        error: const TimeoutException(),
+      );
+      final repository = WeatherRepository(
+        weatherService: fakeService,
+        cacheService: cacheService,
+        connectionService: InternetConnectionService(
+          internetCheck: () async => true,
+        ),
+      );
+
+      expectLater(
+        () => repository.getCurrentWeather('London'),
+        throwsA(isA<TimeoutException>()),
+      );
+    });
+
+    test(
+      'offline request preserves NetworkException for expired cache',
+      () async {
+        await cacheService.saveWeather('Cairo', cachedWeather);
+        currentTime = currentTime.add(const Duration(minutes: 30));
+        final repository = WeatherRepository(
+          weatherService: FakeWeatherService(dioClient: dioClient),
+          cacheService: cacheService,
+          connectionService: InternetConnectionService(
+            internetCheck: () async => false,
+          ),
+        );
+
+        await expectLater(
+          repository.getCurrentWeather('Cairo'),
+          throwsA(isA<NetworkException>()),
+        );
+        expect(preferences.containsKey('cached_weather_cairo_en'), isFalse);
+      },
+    );
+
+    test(
+      'network failure preserves NetworkException for expired cache',
+      () async {
+        await cacheService.saveWeather('Cairo', cachedWeather);
+        currentTime = currentTime.add(const Duration(minutes: 31));
+        final repository = WeatherRepository(
+          weatherService: FakeWeatherService(
+            dioClient: dioClient,
+            error: const NetworkException(),
+          ),
+          cacheService: cacheService,
+          connectionService: InternetConnectionService(
+            internetCheck: () async => true,
+          ),
+        );
+
+        await expectLater(
+          repository.getCurrentWeather('Cairo'),
+          throwsA(isA<NetworkException>()),
+        );
+      },
+    );
+
+    test('timeout preserves TimeoutException for expired cache', () async {
+      await cacheService.saveWeather('Cairo', cachedWeather);
+      currentTime = currentTime.add(const Duration(minutes: 31));
+      final repository = WeatherRepository(
+        weatherService: FakeWeatherService(
+          dioClient: dioClient,
+          error: const TimeoutException(),
+        ),
+        cacheService: cacheService,
+        connectionService: InternetConnectionService(
+          internetCheck: () async => true,
+        ),
+      );
+
+      await expectLater(
+        repository.getCurrentWeather('Cairo'),
+        throwsA(isA<TimeoutException>()),
+      );
+    });
+
+    test(
+      'offline request preserves NetworkException for legacy cache',
+      () async {
+        await preferences.setString(
+          'cached_weather_cairo_en',
+          jsonEncode(cachedWeather.toJson()),
+        );
+        final repository = WeatherRepository(
+          weatherService: FakeWeatherService(dioClient: dioClient),
+          cacheService: cacheService,
+          connectionService: InternetConnectionService(
+            internetCheck: () async => false,
+          ),
+        );
+
+        await expectLater(
+          repository.getCurrentWeather('Cairo'),
+          throwsA(isA<NetworkException>()),
+        );
+        expect(preferences.containsKey('cached_weather_cairo_en'), isFalse);
+      },
+    );
+
+    test(
+      'network failure preserves NetworkException for incompatible schema',
+      () async {
+        await cacheService.saveWeather('Cairo', cachedWeather);
+        final stored =
+            jsonDecode(preferences.getString('cached_weather_cairo_en')!)
+                as Map;
+        stored['schemaVersion'] = 3;
+        await preferences.setString(
+          'cached_weather_cairo_en',
+          jsonEncode(stored),
+        );
+        final repository = WeatherRepository(
+          weatherService: FakeWeatherService(
+            dioClient: dioClient,
+            error: const NetworkException(),
+          ),
+          cacheService: cacheService,
+          connectionService: InternetConnectionService(
+            internetCheck: () async => true,
+          ),
+        );
+
+        await expectLater(
+          repository.getCurrentWeather('Cairo'),
+          throwsA(isA<NetworkException>()),
+        );
+        expect(preferences.containsKey('cached_weather_cairo_en'), isFalse);
+      },
+    );
+
+    test(
+      'rethrows DataParsingException without falling back to or replacing cache',
+      () async {
+        await cacheService.saveWeather('Cairo', cachedWeather);
+        final fakeService = FakeWeatherService(
+          dioClient: dioClient,
+          error: const DataParsingException('Invalid current.temp_c.'),
+        );
+        final repository = WeatherRepository(
+          weatherService: fakeService,
+          cacheService: cacheService,
+          connectionService: InternetConnectionService(
+            internetCheck: () async => true,
+          ),
+        );
+
+        await expectLater(
+          repository.getCurrentWeather('Cairo'),
+          throwsA(isA<DataParsingException>()),
+        );
+        expect(await cacheService.getCachedWeather('Cairo'), cachedWeather);
+        expect(fakeService.callCount, 1);
+      },
+    );
+
+    final nonRecoverableErrors = <AppException>[
+      const UnauthorizedException(),
+      const NotFoundException(),
+      const ServerException(),
+    ];
+
+    for (final error in nonRecoverableErrors) {
+      test(
+        'rethrows ${error.runtimeType} without using or replacing cache',
+        () async {
+          await cacheService.saveWeather('Cairo', cachedWeather);
+          final fakeService = FakeWeatherService(
+            dioClient: dioClient,
+            error: error,
+          );
+          final repository = WeatherRepository(
+            weatherService: fakeService,
+            cacheService: cacheService,
+            connectionService: InternetConnectionService(
+              internetCheck: () async => true,
+            ),
+          );
+
+          await expectLater(
+            repository.getCurrentWeather('Cairo'),
+            throwsA(same(error)),
+          );
+          expect(await cacheService.getCachedWeather('Cairo'), cachedWeather);
+          expect(fakeService.callCount, 1);
+        },
+      );
+    }
   });
 }
