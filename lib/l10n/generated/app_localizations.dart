@@ -104,6 +104,12 @@ abstract class AppLocalizations {
   /// **'Weather App'**
   String get appTitle;
 
+  /// No description provided for @splashTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather at a glance'**
+  String get splashTagline;
+
   /// No description provided for @foundationReady.
   ///
   /// In en, this message translates to:

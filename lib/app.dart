@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/localization/locale_cubit.dart';
+import 'features/splash/presentation/pages/splash_page.dart';
 import 'features/weather/data/repositories/weather_repository.dart';
 import 'features/weather/logic/bloc/weather_bloc.dart';
 import 'features/weather/presentation/pages/weather_page.dart';
@@ -49,7 +50,7 @@ class WeatherApp extends StatelessWidget {
                 home: child,
               );
             },
-            child: const WeatherPage(),
+            child: const SplashPage(destination: WeatherPage()),
           );
         },
       ),

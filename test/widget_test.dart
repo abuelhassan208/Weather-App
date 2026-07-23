@@ -34,6 +34,7 @@ void main() {
       WeatherApp(weatherRepository: repository, preferences: preferences),
     );
 
+    await tester.pump(const Duration(milliseconds: 1200));
     await tester.pumpAndSettle();
 
     expect(find.text('تطبيق الطقس'), findsOneWidget);

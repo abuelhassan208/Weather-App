@@ -12,6 +12,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Weather App';
 
   @override
+  String get splashTagline => 'Weather at a glance';
+
+  @override
   String get foundationReady => 'Weather app foundation is ready';
 
   @override
