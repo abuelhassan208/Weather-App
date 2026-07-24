@@ -2,9 +2,11 @@ import 'package:dio/dio.dart';
 
 import '../constants/api_constants.dart';
 import '../errors/app_exception.dart';
+import '../logging/app_logger.dart';
+import 'interceptors/api_logging_interceptor.dart';
 
 class DioClient {
-  DioClient()
+  DioClient({AppLogger logger = const NoopAppLogger()})
     : dio = Dio(
         BaseOptions(
           baseUrl: ApiConstants.baseUrl,
@@ -14,7 +16,11 @@ class DioClient {
           responseType: ResponseType.json,
           headers: const {'Accept': 'application/json'},
         ),
-      );
+      ) {
+    dio.interceptors.add(
+      ApiLoggingInterceptor(logger: logger, mapException: mapDioException),
+    );
+  }
 
   final Dio dio;
 

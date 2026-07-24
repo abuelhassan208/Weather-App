@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/errors/app_exception.dart';
+import '../../../../core/logging/app_logger.dart';
 import '../models/weather_cache_entry.dart';
 import '../models/weather_model.dart';
 
@@ -12,6 +13,7 @@ class WeatherCacheService {
   WeatherCacheService({
     required this.preferences,
     this.ttl = defaultTtl,
+    this.logger = const NoopAppLogger(),
     Clock? now,
   }) : _now = now ?? _currentUtcTime {
     if (ttl <= Duration.zero) {
@@ -24,6 +26,7 @@ class WeatherCacheService {
 
   final SharedPreferences preferences;
   final Duration ttl;
+  final AppLogger logger;
   final Clock _now;
 
   Future<void> saveWeather(
@@ -48,8 +51,10 @@ class WeatherCacheService {
     );
 
     if (!didSave) {
+      logger.warning('Weather cache write failed');
       throw const CacheException('Failed to save weather data.');
     }
+    logger.debug('Weather cache write completed');
   }
 
   Future<WeatherCacheEntry?> getCachedEntry(
@@ -62,6 +67,7 @@ class WeatherCacheService {
     final encodedWeather = preferences.getString(cacheKey);
 
     if (encodedWeather == null || encodedWeather.isEmpty) {
+      logger.debug('Weather cache miss');
       return null;
     }
 
@@ -77,6 +83,7 @@ class WeatherCacheService {
 
       if (storedSchemaVersion is! int ||
           storedSchemaVersion != WeatherCacheEntry.currentSchemaVersion) {
+        logger.debug('Weather cache schema mismatch');
         await _removeInvalidEntry(cacheKey);
         return null;
       }
@@ -87,20 +94,28 @@ class WeatherCacheService {
       if (entry.normalizedCity != normalizedCity ||
           entry.languageCode != normalizedLanguage ||
           entry.cachedAt.isAfter(now)) {
+        logger.warning('Weather cache metadata is invalid');
         await _removeInvalidEntry(cacheKey);
         throw const CacheException('Cached weather metadata is invalid.');
       }
 
       final cacheAge = now.difference(entry.cachedAt);
       if (cacheAge >= ttl) {
+        logger.debug('Weather cache expired');
         await _removeInvalidEntry(cacheKey);
         return null;
       }
 
+      logger.debug('Weather cache hit');
       return entry;
     } on CacheException {
       rethrow;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      logger.warning(
+        'Weather cache is corrupted',
+        error: error,
+        stackTrace: stackTrace,
+      );
       await _removeInvalidEntry(cacheKey);
       throw const CacheException('Cached weather data is invalid.');
     }
@@ -127,16 +142,20 @@ class WeatherCacheService {
     final didRemove = await preferences.remove(cacheKey);
 
     if (!didRemove && preferences.containsKey(cacheKey)) {
+      logger.warning('Weather cache removal failed');
       throw const CacheException('Failed to clear weather data.');
     }
+    logger.debug('Weather cache removed');
   }
 
   Future<void> _removeInvalidEntry(String cacheKey) async {
     final didRemove = await preferences.remove(cacheKey);
 
     if (!didRemove && preferences.containsKey(cacheKey)) {
+      logger.warning('Invalid weather cache removal failed');
       throw const CacheException('Failed to remove invalid weather cache.');
     }
+    logger.debug('Invalid weather cache removed');
   }
 
   static String _normalizeCity(String city) {
