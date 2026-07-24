@@ -3,8 +3,6 @@
 
   "appTitle": "Weather App",
   "splashTagline": "Weather at a glance",
-  "foundationReady": "Weather app foundation is ready",
-
   "weatherInitialMessage": "Search for a city to view its current weather.",
   "cityInputLabel": "City",
   "cityInputHint": "Enter a city name",

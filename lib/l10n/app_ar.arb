@@ -3,8 +3,6 @@
 
   "appTitle": "تطبيق الطقس",
   "splashTagline": "الطقس في لمحة",
-  "foundationReady": "تم تجهيز الأساس المبدئي لتطبيق الطقس",
-
   "weatherInitialMessage": "ابحث عن مدينة لعرض حالة الطقس الحالية.",
   "cityInputLabel": "المدينة",
   "cityInputHint": "أدخل اسم المدينة",

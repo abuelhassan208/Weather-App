@@ -110,12 +110,6 @@ abstract class AppLocalizations {
   /// **'Weather at a glance'**
   String get splashTagline;
 
-  /// No description provided for @foundationReady.
-  ///
-  /// In en, this message translates to:
-  /// **'Weather app foundation is ready'**
-  String get foundationReady;
-
   /// No description provided for @weatherInitialMessage.
   ///
   /// In en, this message translates to:

@@ -15,9 +15,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get splashTagline => 'الطقس في لمحة';
 
   @override
-  String get foundationReady => 'تم تجهيز الأساس المبدئي لتطبيق الطقس';
-
-  @override
   String get weatherInitialMessage => 'ابحث عن مدينة لعرض حالة الطقس الحالية.';
 
   @override

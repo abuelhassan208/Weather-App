@@ -15,9 +15,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get splashTagline => 'Weather at a glance';
 
   @override
-  String get foundationReady => 'Weather app foundation is ready';
-
-  @override
   String get weatherInitialMessage =>
       'Search for a city to view its current weather.';
 
